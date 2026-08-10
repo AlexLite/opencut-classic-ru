@@ -20,6 +20,8 @@ export const ru = {
 		loading: "Загрузка",
 		lightMode: "Светлая тема",
 		darkMode: "Тёмная тема",
+		dragToAdjustValue: "Перетащите, чтобы изменить значение",
+		resetToDefault: "Сбросить к значению по умолчанию",
 	},
 	language: {
 		label: "Язык",
