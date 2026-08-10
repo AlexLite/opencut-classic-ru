@@ -70,7 +70,7 @@ function useFeedback() {
 			});
 
 			if (!res.ok) {
-				throw new Error(editorT.feedback.failed);
+				throw new Error(`Feedback request failed with status ${res.status}`);
 			}
 
 			const { entry } = await res.json();
@@ -80,9 +80,8 @@ function useFeedback() {
 			onSuccess();
 			toast.success(editorT.feedback.sent);
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : editorT.feedback.failed,
-			);
+			console.error("Failed to send feedback:", error);
+			toast.error(editorT.feedback.failed);
 		} finally {
 			setIsSubmitting(false);
 		}
