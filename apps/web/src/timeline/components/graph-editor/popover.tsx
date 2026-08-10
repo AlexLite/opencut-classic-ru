@@ -64,7 +64,7 @@ export function GraphEditorPopover({
 	const { timelineT } = useI18n();
 	const allPresets = [...BUILTIN_PRESETS, ...custom];
 	const canEdit = value !== null;
-	const builtinPresetLabels: Record<string, string> =
+	const builtinPresetLabels: Readonly<Record<string, string>> =
 		timelineT.graphEditor.presetsById;
 	const activePresetId =
 		value == null
