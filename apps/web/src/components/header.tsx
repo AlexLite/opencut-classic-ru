@@ -117,6 +117,10 @@ export function Header() {
 							size="icon"
 							className="flex items-center justify-center p-0"
 							onClick={() => setIsMenuOpen(!isMenuOpen)}
+							aria-label={
+								isMenuOpen ? siteT.header.closeMenu : siteT.header.openMenu
+							}
+							aria-expanded={isMenuOpen}
 						>
 							<HugeiconsIcon icon={Menu02Icon} size={30} />
 						</Button>
