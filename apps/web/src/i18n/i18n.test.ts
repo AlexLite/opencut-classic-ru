@@ -110,7 +110,7 @@ describe("i18n source hygiene", () => {
 		for (const path of sourceFiles) {
 			const content = await readFile(path, "utf8");
 			content.split(/\r?\n/).forEach((line, index) => {
-				if (/[А-Яа-яЁё]/.test(line)) {
+				if (/\p{Script=Cyrillic}/u.test(line)) {
 					violations.push(`${relative(sourceRoot, path)}:${index + 1}`);
 				}
 			});
