@@ -69,7 +69,7 @@ export function PropertiesPanel() {
 			<TooltipProvider delayDuration={0}>
 				<div className="flex shrink-0 flex-col gap-0.5 border-r p-1 scrollbar-hidden overflow-y-auto">
 					{visibleTabs.map((tab) => {
-						const label = tabLabels[tab.id] ?? tab.label;
+						const label = tabLabels[tab.id] ?? tab.id;
 						return (
 							<Tooltip key={tab.id}>
 								<TooltipTrigger asChild>

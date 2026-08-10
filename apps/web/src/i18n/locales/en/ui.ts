@@ -21,6 +21,14 @@ export const uiEn = {
 		opacity: "Opacity",
 		open: "Open color picker",
 	},
+	input: {
+		clear: "Clear input",
+		showPassword: "Show password",
+		hidePassword: "Hide password",
+	},
+	selection: {
+		selectableItems: "Selectable items",
+	},
 	breadcrumb: {
 		label: "Breadcrumb",
 		more: "More",
