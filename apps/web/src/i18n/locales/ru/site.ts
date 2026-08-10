@@ -11,6 +11,7 @@ export const siteRu = {
 		downloadSvg: "Скачать SVG",
 		brandAssets: "Материалы бренда",
 		projects: "Проекты",
+		openMenu: "Открыть меню",
 		closeMenu: "Закрыть меню",
 		logoAlt: "Логотип OpenCut",
 	},
