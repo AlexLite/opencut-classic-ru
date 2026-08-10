@@ -117,10 +117,13 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 				`WebCodecs VideoEncoder does not support ${webCodecsConfig.codec} at ${this.width}x${this.height}`,
 			);
 		}
+		const fullCodecString =
+			encoderCapability.config?.codec ?? webCodecsConfig.codec;
 
 		const videoSource = new CanvasSource(this.renderer.getOutputCanvas(), {
 			codec,
 			bitrate: qualityMap[this.quality],
+			fullCodecString,
 			hardwareAcceleration: encoderCapability.hardwareAcceleration,
 		});
 
