@@ -67,6 +67,7 @@ import {
 	OcTextWidthIcon,
 } from "@/components/icons";
 import { cn } from "@/utils/ui";
+import { useI18n } from "@/i18n/use-i18n";
 
 type MasksTabProps = {
 	element: MaskableElement;
@@ -128,6 +129,9 @@ function withPreviewedMaskParam({
 
 export function MasksTab({ element, trackId }: MasksTabProps) {
 	const editor = useEditor();
+	const { propertiesT } = useI18n();
+	const maskT = propertiesT.masks;
+	const maskTypeLabels = maskT.types as Readonly<Record<string, string>>;
 	const { renderElement, previewUpdates, commit } =
 		useElementPreview<MaskableElement>({
 			trackId,
@@ -140,9 +144,7 @@ export function MasksTab({ element, trackId }: MasksTabProps) {
 	);
 	const currentTime = useEditor((e) => e.playback.getCurrentTime());
 	const mediaAssets = useEditor((e) => e.media.getAssets());
-	const canvasSize = useEditor(
-		(e) => e.project.getActive().settings.canvasSize,
-	);
+	const canvasSize = useEditor((e) => e.project.getActive().settings.canvasSize);
 	const masks = element.masks ?? [];
 	const renderMasks = renderElement.masks ?? masks;
 	const hasMask = masks.length > 0;
@@ -254,7 +256,7 @@ export function MasksTab({ element, trackId }: MasksTabProps) {
 	return (
 		<div className="flex flex-col h-full">
 			<div className="border-b px-3.5 h-11 shrink-0 flex items-center justify-between gap-2">
-				<SectionTitle>Masks</SectionTitle>
+				<SectionTitle>{maskT.title}</SectionTitle>
 				<DropdownMenu
 					open={hasMask ? false : isDropdownOpen}
 					onOpenChange={handleDropdownOpenChange}
@@ -267,20 +269,19 @@ export function MasksTab({ element, trackId }: MasksTabProps) {
 										variant="ghost"
 										size="icon"
 										disabled
-										aria-label="Add mask"
+										aria-label={maskT.addMask}
 									>
 										<HugeiconsIcon icon={PlusSignIcon} className="size-3.5!" />
 									</Button>
 								</span>
 							</TooltipTrigger>
 							<TooltipContent className="max-w-56 text-balance">
-								Only one mask is supported right now. If you need more,
-								duplicate the clip and apply a different mask to each copy.
+								{maskT.onlyOneSupported}
 							</TooltipContent>
 						</Tooltip>
 					) : (
 						<DropdownMenuTrigger asChild>
-							<Button variant="ghost" size="icon" aria-label="Add mask">
+							<Button variant="ghost" size="icon" aria-label={maskT.addMask}>
 								<HugeiconsIcon icon={PlusSignIcon} className="size-3.5!" />
 							</Button>
 						</DropdownMenuTrigger>
@@ -289,13 +290,11 @@ export function MasksTab({ element, trackId }: MasksTabProps) {
 						{maskDefs.map((definition) => (
 							<DropdownMenuItem
 								key={definition.type}
-								onPointerEnter={() =>
-									previewMask({ maskType: definition.type })
-								}
+								onPointerEnter={() => previewMask({ maskType: definition.type })}
 								onClick={() => commitMask({ maskType: definition.type })}
 							>
 								<HugeiconsIcon {...definition.icon} />
-								{definition.name}
+								{maskTypeLabels[definition.type] ?? definition.name}
 							</DropdownMenuItem>
 						))}
 					</DropdownMenuContent>
@@ -311,9 +310,7 @@ export function MasksTab({ element, trackId }: MasksTabProps) {
 						trackId={trackId}
 						elementId={element.id}
 						mask={renderMasks[index] ?? mask}
-						previewParam={(paramKey) =>
-							previewMaskParam({ index, key: paramKey })
-						}
+						previewParam={(paramKey) => previewMaskParam({ index, key: paramKey })}
 						onCommit={commit}
 					/>
 				))
@@ -330,7 +327,11 @@ function MaskItem({
 	onCommit,
 }: MaskItemProps) {
 	const editor = useEditor();
+	const { propertiesT } = useI18n();
+	const maskT = propertiesT.masks;
+	const maskTypeLabels = maskT.types as Readonly<Record<string, string>>;
 	const definition = getMaskDefinition(mask.type);
+	const maskName = maskTypeLabels[definition.type] ?? definition.name;
 
 	return (
 		<Section sectionKey={`mask-item:${mask.id}`} showTopBorder={false}>
@@ -340,7 +341,7 @@ function MaskItem({
 						<Button
 							variant="ghost"
 							size="icon"
-							aria-label={`Toggle ${definition.name} mask inversion`}
+							aria-label={`${maskT.toggleInversion}: ${maskName}`}
 							onClick={() =>
 								editor.timeline.toggleMaskInverted({
 									trackId,
@@ -349,14 +350,12 @@ function MaskItem({
 								})
 							}
 						>
-							<OcMirrorIcon
-								className={cn(mask.params.inverted && "-scale-x-100")}
-							/>
+							<OcMirrorIcon className={cn(mask.params.inverted && "-scale-x-100")} />
 						</Button>
 						<Button
 							variant="ghost"
 							size="icon"
-							aria-label={`Remove ${definition.name} mask`}
+							aria-label={`${maskT.removeMask}: ${maskName}`}
 							onClick={() =>
 								editor.timeline.removeMask({
 									trackId,
@@ -372,9 +371,7 @@ function MaskItem({
 			>
 				<div className="flex items-center gap-2">
 					<HugeiconsIcon {...definition.icon} size={14} />
-					<SectionTitle className="capitalize font-normal">
-						{definition.name}
-					</SectionTitle>
+					<SectionTitle className="capitalize font-normal">{maskName}</SectionTitle>
 				</div>
 			</SectionHeader>
 			<SectionContent>
@@ -400,16 +397,12 @@ function MaskParamsFields({
 	previewParam: PreviewParamHandler;
 	onCommit: () => void;
 }) {
-	const featherParam = getNumberParamDefinition({
-		definition,
-		key: "feather",
-	});
-	const strokeWidthParam = getNumberParamDefinition({
-		definition,
-		key: "strokeWidth",
-	});
-	const previewNumberParam = (key: string) => (value: number) =>
-		previewParam(key)(value);
+	const { propertiesT } = useI18n();
+	const fields = propertiesT.masks.fields;
+	const strokeAlignLabels = propertiesT.masks.strokeAlign as Readonly<Record<string, string>>;
+	const featherParam = getNumberParamDefinition({ definition, key: "feather" });
+	const strokeWidthParam = getNumberParamDefinition({ definition, key: "strokeWidth" });
+	const previewNumberParam = (key: string) => (value: number) => previewParam(key)(value);
 	const previewStrokeColor = previewParam("strokeColor");
 	const strokeAlignParam = definition.params.find(
 		(param): param is SelectParamDefinition<string> =>
@@ -423,42 +416,27 @@ function MaskParamsFields({
 					mask={mask}
 					previewParam={previewParam}
 					onCommit={onCommit}
-					fontSizeParam={getNumberParamDefinition({
-						definition,
-						key: "fontSize",
-					})}
+					fontSizeParam={getNumberParamDefinition({ definition, key: "fontSize" })}
 				/>
 			) : null}
 			{definition.features.hasPosition &&
 				"centerX" in mask.params &&
 				"centerY" in mask.params && (
-					<SectionField label="Position">
+					<SectionField label={fields.position}>
 						<div className="flex items-center gap-2">
 							<MaskNumberField
 								className="flex-1"
 								icon="X"
-								param={getNumberParamDefinition({
-									definition,
-									key: "centerX",
-								})}
-								value={getMaskNumber({
-									params: mask.params,
-									key: "centerX",
-								})}
+								param={getNumberParamDefinition({ definition, key: "centerX" })}
+								value={getMaskNumber({ params: mask.params, key: "centerX" })}
 								onPreview={previewNumberParam("centerX")}
 								onCommit={onCommit}
 							/>
 							<MaskNumberField
 								className="flex-1"
 								icon="Y"
-								param={getNumberParamDefinition({
-									definition,
-									key: "centerY",
-								})}
-								value={getMaskNumber({
-									params: mask.params,
-									key: "centerY",
-								})}
+								param={getNumberParamDefinition({ definition, key: "centerY" })}
+								value={getMaskNumber({ params: mask.params, key: "centerY" })}
 								onPreview={previewNumberParam("centerY")}
 								onCommit={onCommit}
 							/>
@@ -469,33 +447,21 @@ function MaskParamsFields({
 			{definition.features.sizeMode === "width-height" &&
 				"width" in mask.params &&
 				"height" in mask.params && (
-					<SectionField label="Size">
+					<SectionField label={fields.size}>
 						<div className="flex items-center gap-2">
 							<MaskNumberField
 								className="flex-1"
 								icon="W"
-								param={getNumberParamDefinition({
-									definition,
-									key: "width",
-								})}
-								value={getMaskNumber({
-									params: mask.params,
-									key: "width",
-								})}
+								param={getNumberParamDefinition({ definition, key: "width" })}
+								value={getMaskNumber({ params: mask.params, key: "width" })}
 								onPreview={previewNumberParam("width")}
 								onCommit={onCommit}
 							/>
 							<MaskNumberField
 								className="flex-1"
 								icon="H"
-								param={getNumberParamDefinition({
-									definition,
-									key: "height",
-								})}
-								value={getMaskNumber({
-									params: mask.params,
-									key: "height",
-								})}
+								param={getNumberParamDefinition({ definition, key: "height" })}
+								value={getMaskNumber({ params: mask.params, key: "height" })}
 								onPreview={previewNumberParam("height")}
 								onCommit={onCommit}
 							/>
@@ -503,58 +469,36 @@ function MaskParamsFields({
 					</SectionField>
 				)}
 
-			{definition.features.sizeMode === "height-only" &&
-				"height" in mask.params && (
-					<SectionField label="Height">
-						<MaskNumberField
-							icon="H"
-							param={getNumberParamDefinition({
-								definition,
-								key: "height",
-							})}
-							value={getMaskNumber({
-								params: mask.params,
-								key: "height",
-							})}
-							onPreview={previewNumberParam("height")}
-							onCommit={onCommit}
-						/>
-					</SectionField>
-				)}
+			{definition.features.sizeMode === "height-only" && "height" in mask.params && (
+				<SectionField label={fields.height}>
+					<MaskNumberField
+						icon="H"
+						param={getNumberParamDefinition({ definition, key: "height" })}
+						value={getMaskNumber({ params: mask.params, key: "height" })}
+						onPreview={previewNumberParam("height")}
+						onCommit={onCommit}
+					/>
+				</SectionField>
+			)}
 
-			{definition.features.sizeMode === "width-only" &&
-				"width" in mask.params && (
-					<SectionField label="Width">
-						<MaskNumberField
-							icon="W"
-							param={getNumberParamDefinition({
-								definition,
-								key: "width",
-							})}
-							value={getMaskNumber({
-								params: mask.params,
-								key: "width",
-							})}
-							onPreview={previewNumberParam("width")}
-							onCommit={onCommit}
-						/>
-					</SectionField>
-				)}
+			{definition.features.sizeMode === "width-only" && "width" in mask.params && (
+				<SectionField label={fields.width}>
+					<MaskNumberField
+						icon="W"
+						param={getNumberParamDefinition({ definition, key: "width" })}
+						value={getMaskNumber({ params: mask.params, key: "width" })}
+						onPreview={previewNumberParam("width")}
+						onCommit={onCommit}
+					/>
+				</SectionField>
+			)}
 
 			{definition.features.sizeMode === "uniform" && "scale" in mask.params && (
-				<SectionField label="Scale">
+				<SectionField label={fields.scale}>
 					<MaskNumberField
-						icon={
-							isTextMask(mask) ? <HugeiconsIcon icon={ArrowExpandIcon} /> : "S"
-						}
-						param={getNumberParamDefinition({
-							definition,
-							key: "scale",
-						})}
-						value={getMaskNumber({
-							params: mask.params,
-							key: "scale",
-						})}
+						icon={isTextMask(mask) ? <HugeiconsIcon icon={ArrowExpandIcon} /> : "S"}
+						param={getNumberParamDefinition({ definition, key: "scale" })}
+						value={getMaskNumber({ params: mask.params, key: "scale" })}
 						onPreview={previewNumberParam("scale")}
 						onCommit={onCommit}
 					/>
@@ -562,47 +506,35 @@ function MaskParamsFields({
 			)}
 
 			{definition.features.hasRotation && "rotation" in mask.params && (
-				<SectionField label="Rotation">
+				<SectionField label={fields.rotation}>
 					<MaskNumberField
 						icon={<HugeiconsIcon icon={RotateClockwiseIcon} />}
-						param={getNumberParamDefinition({
-							definition,
-							key: "rotation",
-						})}
-						value={getMaskNumber({
-							params: mask.params,
-							key: "rotation",
-						})}
+						param={getNumberParamDefinition({ definition, key: "rotation" })}
+						value={getMaskNumber({ params: mask.params, key: "rotation" })}
 						onPreview={previewNumberParam("rotation")}
 						onCommit={onCommit}
 					/>
 				</SectionField>
 			)}
 
-			<SectionField label="Feather">
+			<SectionField label={fields.feather}>
 				<MaskNumberField
 					icon={<HugeiconsIcon icon={FeatherIcon} />}
 					param={featherParam}
-					value={getMaskNumber({
-						params: mask.params,
-						key: "feather",
-					})}
+					value={getMaskNumber({ params: mask.params, key: "feather" })}
 					onPreview={previewNumberParam("feather")}
 					onCommit={onCommit}
 				/>
 			</SectionField>
 
-			<SectionField label="Stroke">
+			<SectionField label={fields.stroke}>
 				<div className="flex flex-col gap-2">
 					<div className="flex items-center gap-2">
 						<MaskNumberField
 							className="flex-1"
 							icon="W"
 							param={strokeWidthParam}
-							value={getMaskNumber({
-								params: mask.params,
-								key: "strokeWidth",
-							})}
+							value={getMaskNumber({ params: mask.params, key: "strokeWidth" })}
 							onPreview={previewNumberParam("strokeWidth")}
 							onCommit={onCommit}
 						/>
@@ -630,7 +562,7 @@ function MaskParamsFields({
 							<SelectContent>
 								{strokeAlignParam.options.map((option) => (
 									<SelectItem key={option.value} value={option.value}>
-										{option.label}
+										{strokeAlignLabels[option.value] ?? option.label}
 									</SelectItem>
 								))}
 							</SelectContent>
@@ -673,6 +605,8 @@ function TextMaskFields({
 	onCommit: () => void;
 	fontSizeParam: NumberParamDefinition;
 }) {
+	const { propertiesT } = useI18n();
+	const fields = propertiesT.masks.fields;
 	const content = usePropertyDraft({
 		displayValue: mask.params.content,
 		parse: (input) => input,
@@ -680,12 +614,11 @@ function TextMaskFields({
 		onCommit,
 	});
 
-	const previewNumberParam = (key: string) => (value: number) =>
-		previewParam(key)(value);
+	const previewNumberParam = (key: string) => (value: number) => previewParam(key)(value);
 
 	return (
 		<>
-			<SectionField label="Content">
+			<SectionField label={fields.content}>
 				<Textarea
 					value={content.displayValue}
 					className="min-h-20"
@@ -694,7 +627,7 @@ function TextMaskFields({
 					onBlur={content.onBlur}
 				/>
 			</SectionField>
-			<SectionField label="Font">
+			<SectionField label={fields.font}>
 				<FontPicker
 					defaultValue={mask.params.fontFamily}
 					onValueChange={(value) => {
@@ -703,7 +636,7 @@ function TextMaskFields({
 					}}
 				/>
 			</SectionField>
-			<SectionField label="Size">
+			<SectionField label={fields.size}>
 				<MaskNumberField
 					icon={<HugeiconsIcon icon={TextFontIcon} />}
 					param={fontSizeParam}
@@ -712,7 +645,7 @@ function TextMaskFields({
 					onCommit={onCommit}
 				/>
 			</SectionField>
-			<SectionField label="Spacing">
+			<SectionField label={fields.spacing}>
 				<div className="flex items-start gap-2">
 					<MaskNumberField
 						className="w-1/2"
@@ -782,9 +715,7 @@ function MaskNumberField({
 }) {
 	const isPercent = param.unit === "percent";
 	const percentMax = param.max ?? 100;
-	const displayMultiplier = isPercent
-		? 100 / percentMax
-		: (param.displayMultiplier ?? 1);
+	const displayMultiplier = isPercent ? 100 / percentMax : (param.displayMultiplier ?? 1);
 	const min = isPercent ? 0 : param.min;
 	const max = isPercent ? 100 : param.max;
 	const step = isPercent ? 1 : param.step;
@@ -811,9 +742,7 @@ function MaskNumberField({
 		parse: (input) => {
 			const parsed = parseFloat(input);
 			if (Number.isNaN(parsed)) return null;
-			return (
-				clampDisplay(snapToStep({ value: parsed, step })) / displayMultiplier
-			);
+			return clampDisplay(snapToStep({ value: parsed, step })) / displayMultiplier;
 		},
 		onPreview,
 		onCommit,
@@ -835,17 +764,20 @@ function MaskNumberField({
 }
 
 function EmptyView({ onAddMask }: EmptyViewProps) {
+	const { propertiesT } = useI18n();
+	const maskT = propertiesT.masks;
+
 	return (
 		<div className="flex flex-col h-full items-center justify-center gap-4 text-center">
 			<OcShapesIcon className="size-10 text-muted-foreground" strokeWidth={1} />
 			<div className="flex flex-col gap-2">
-				<h3 className="font-medium text-foreground">No masks</h3>
+				<h3 className="font-medium text-foreground">{maskT.noMasks}</h3>
 				<p className="text-muted-foreground text-sm text-balance max-w-40">
-					Add a mask to hide or reveal parts of this layer.
+					{maskT.noMasksDescription}
 				</p>
 			</div>
 			<Button variant="default" size="sm" onClick={onAddMask}>
-				Add mask
+				{maskT.addMask}
 			</Button>
 		</div>
 	);
