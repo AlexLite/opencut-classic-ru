@@ -43,10 +43,15 @@ export function PropertyParamField({
 		onToggle: () => void;
 	};
 }) {
-	const { editorT, assetsT } = useI18n();
+	const { editorT, assetsT, propertiesT } = useI18n();
 	const paramLabels = editorT.properties.paramLabels as Record<string, string>;
 	const effectParamLabels = assetsT.effects.paramLabels as Record<string, string>;
-	const label = paramLabels[param.key] ?? effectParamLabels[param.key] ?? param.label;
+	const panelParamLabels = propertiesT.paramLabels as Record<string, string>;
+	const label =
+		paramLabels[param.key] ??
+		effectParamLabels[param.key] ??
+		panelParamLabels[param.key] ??
+		param.label;
 
 	return (
 		<SectionField
@@ -83,8 +88,9 @@ function ParamInput({
 	onPreview: (value: ParamValue) => void;
 	onCommit: () => void;
 }) {
-	const { editorT } = useI18n();
+	const { editorT, propertiesT } = useI18n();
 	const optionLabels = editorT.properties.optionLabels as Record<string, string>;
+	const panelOptionLabels = propertiesT.optionLabels as Record<string, string>;
 
 	if (param.type === "number") {
 		return (
@@ -124,7 +130,9 @@ function ParamInput({
 				<SelectContent>
 					{param.options.map((option) => (
 						<SelectItem key={option.value} value={option.value}>
-							{optionLabels[option.value] ?? option.label}
+							{optionLabels[option.value] ??
+								panelOptionLabels[option.value] ??
+								option.label}
 						</SelectItem>
 					))}
 				</SelectContent>
