@@ -7,6 +7,7 @@ export const previewEn = {
 	pause: "Pause",
 	saveSnapshot: "Save snapshot",
 	copySnapshot: "Copy snapshot",
+	snapshotCopied: "Snapshot copied",
 	failedToSaveSnapshot: "Failed to save snapshot",
 	failedToCopySnapshot: "Failed to copy snapshot",
 	tryAgain: "Please try again",
@@ -14,5 +15,11 @@ export const previewEn = {
 	overlays: {
 		bookmarkNotes: "Bookmark notes",
 		guides: "Guides",
+	},
+	guides: {
+		title: "Guides",
+		custom: "Custom",
+		grid: "Grid",
+		addGuideLine: "Add guide line",
 	},
 } as const;
