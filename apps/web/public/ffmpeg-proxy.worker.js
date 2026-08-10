@@ -74,6 +74,21 @@ async function loadCore(useMultithread) {
 	}
 }
 
+async function loadPreferredCore(useMultithread) {
+	if (!useMultithread) return loadCore(false);
+	try {
+		return await loadCore(true);
+	} catch (multithreadError) {
+		try {
+			return await loadCore(false);
+		} catch (singleThreadError) {
+			throw new Error(
+				`Multi-thread ffmpeg.wasm failed: ${errorMessage(multithreadError)}; single-thread fallback failed: ${errorMessage(singleThreadError)}`,
+			);
+		}
+	}
+}
+
 self.onmessage = async (event) => {
 	const request = event.data;
 	if (!request || request.type !== "transcode") return;
@@ -84,7 +99,7 @@ self.onmessage = async (event) => {
 	let phase = "load";
 
 	try {
-		const loaded = await loadCore(Boolean(useMultithread));
+		const loaded = await loadPreferredCore(Boolean(useMultithread));
 		ffmpeg = loaded.ffmpeg;
 		objectUrls = loaded.objectUrls;
 		phase = "transcode";
