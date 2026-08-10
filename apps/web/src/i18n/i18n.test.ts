@@ -9,6 +9,8 @@ import { timelineEn } from "./locales/en/timeline";
 import { timelineRu } from "./locales/ru/timeline";
 import { previewEn } from "./locales/en/preview";
 import { previewRu } from "./locales/ru/preview";
+import { changelogEn } from "./locales/en/changelog";
+import { changelogRu } from "./locales/ru/changelog";
 
 function collectLeafKeys(value: unknown, prefix = ""): string[] {
 	if (typeof value !== "object" || value === null) {
@@ -27,6 +29,7 @@ const dictionaryPairs = [
 	["assets", assetsEn, assetsRu],
 	["timeline", timelineEn, timelineRu],
 	["preview", previewEn, previewRu],
+	["changelog", changelogEn, changelogRu],
 ] as const;
 
 describe("i18n dictionaries", () => {
