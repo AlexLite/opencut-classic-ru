@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -10,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function RenameProjectDialog({
 	isOpen,
@@ -23,6 +26,7 @@ export function RenameProjectDialog({
 	projectName: string;
 }) {
 	const [name, setName] = useState(projectName);
+	const { t } = useI18n();
 
 	const handleOpenChange = (open: boolean) => {
 		if (open) {
@@ -35,11 +39,11 @@ export function RenameProjectDialog({
 		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Rename project</DialogTitle>
+					<DialogTitle>{t.projects.renameDialog.title}</DialogTitle>
 				</DialogHeader>
 
 				<DialogBody className="gap-3">
-					<Label>New name</Label>
+					<Label>{t.projects.renameDialog.newName}</Label>
 					<Input
 						value={name}
 						onChange={(e) => setName(e.target.value)}
@@ -49,7 +53,7 @@ export function RenameProjectDialog({
 								onConfirm(name);
 							}
 						}}
-						placeholder="Enter a new name"
+						placeholder={t.projects.renameDialog.placeholder}
 					/>
 				</DialogBody>
 
@@ -62,9 +66,11 @@ export function RenameProjectDialog({
 							onOpenChange(false);
 						}}
 					>
-						Cancel
+						{t.common.cancel}
 					</Button>
-					<Button onClick={() => onConfirm(name)}>Rename</Button>
+					<Button onClick={() => onConfirm(name)}>
+						{t.projects.renameDialog.rename}
+					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
