@@ -1,4 +1,8 @@
 export const changelogEn = {
+	page: {
+		title: "Changelog",
+		description: "See what's new in OpenCut",
+	},
 	dismiss: "Dismiss",
 	seeFullChangelog: "See full changelog",
 	copyAsMarkdown: "Copy as Markdown",
