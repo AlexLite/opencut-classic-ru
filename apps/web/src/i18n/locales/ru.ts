@@ -186,6 +186,14 @@ export const ru = {
 		patternCraft: "Градиенты Pattern Craft",
 		syntaxUi: "Градиенты Syntax UI",
 	},
+	storage: {
+		persistenceTitle: "Не потеряйте свои проекты",
+		persistenceWarning:
+			"Браузер может автоматически удалить проекты, если на устройстве заканчивается свободное место.",
+		persistenceQuestion: "Разрешить OpenCut защитить их от автоматического удаления?",
+		notNow: "Не сейчас",
+		allow: "Разрешить",
+	},
 	properties: {
 		title: "Свойства",
 		empty: "Выберите элемент, чтобы изменить его свойства",
