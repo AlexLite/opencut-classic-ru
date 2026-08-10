@@ -19,6 +19,12 @@ export const siteEn = {
 			"A simple but powerful video editor that gets the job done. Works on any platform.",
 		tryEarlyBeta: "Try early beta",
 	},
+	blog: {
+		title: "Blog",
+		description:
+			"Read the latest news and updates about OpenCut, the free and open-source video editor.",
+		noPosts: "No posts yet",
+	},
 	contribute: {
 		start: "Start contributing",
 		reportIssues: "Report issues",
