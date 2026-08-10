@@ -15,6 +15,7 @@ export const previewRu = {
 	failedToCopySnapshot: "Не удалось скопировать снимок",
 	tryAgain: "Попробуйте ещё раз",
 	zoom: "Масштаб предпросмотра",
+	canvas: "Холст предпросмотра",
 	overlays: {
 		bookmarkNotes: "Заметки закладок",
 		guides: "Направляющие",
