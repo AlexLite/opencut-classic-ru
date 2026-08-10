@@ -26,6 +26,18 @@ export const timelineEn = {
 		mute: "Mute track",
 		unmute: "Unmute track",
 	},
+	bookmarks: {
+		ruler: "Timeline ruler",
+		bookmarkAt: "Bookmark at",
+		secondsShort: "s",
+		note: "Note",
+		addNote: "Add a note...",
+		color: "Color",
+		resetColor: "Reset to default color",
+		duration: "Duration",
+		delete: "Delete",
+		deleteBookmark: "Delete bookmark",
+	},
 	properties: {
 		"transform.positionX": "Position X",
 		"transform.positionY": "Position Y",
