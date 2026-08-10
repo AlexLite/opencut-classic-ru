@@ -11,6 +11,14 @@ export const siteEn = {
 		closeMenu: "Close menu",
 		logoAlt: "OpenCut logo",
 	},
+	hero: {
+		backgroundAlt: "OpenCut video editor landing page background",
+		openSource: "The open source",
+		videoEditor: "Video editor",
+		description:
+			"A simple but powerful video editor that gets the job done. Works on any platform.",
+		tryEarlyBeta: "Try early beta",
+	},
 	footer: {
 		description: "The privacy-first video editor that feels simple to use.",
 		resources: "Resources",
