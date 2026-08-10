@@ -2,26 +2,9 @@
 
 import { useEffect } from "react";
 import { en } from "./locales/en";
-import { ru } from "./locales/ru";
 import { editorEn } from "./locales/en/editor";
-import { editorRu } from "./locales/ru/editor";
 import { useLocaleStore } from "./store";
-import type { Locale, TranslationShape } from "./types";
-
-const dictionaries: Record<Locale, TranslationShape<typeof en>> = {
-	en,
-	ru,
-};
-
-const editorDictionaries: Record<Locale, TranslationShape<typeof editorEn>> = {
-	en: editorEn,
-	ru: editorRu,
-};
-
-const intlLocales: Record<Locale, string> = {
-	en: "en-US",
-	ru: "ru-RU",
-};
+import { dictionaries, editorDictionaries, intlLocales } from "./runtime";
 
 type PluralForms = {
 	one: string;
