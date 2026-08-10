@@ -5,6 +5,9 @@ export const changelogRu = {
 	page: {
 		title: "Список изменений",
 		description: "Что нового в OpenCut",
+		allReleases: "Все релизы",
+		older: "Предыдущий",
+		newer: "Следующий",
 	},
 	dismiss: "Скрыть",
 	seeFullChangelog: "Открыть полный список изменений",
