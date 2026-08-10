@@ -43,9 +43,10 @@ export function PropertyParamField({
 		onToggle: () => void;
 	};
 }) {
-	const { editorT } = useI18n();
+	const { editorT, assetsT } = useI18n();
 	const paramLabels = editorT.properties.paramLabels as Record<string, string>;
-	const label = paramLabels[param.key] ?? param.label;
+	const effectParamLabels = assetsT.effects.paramLabels as Record<string, string>;
+	const label = paramLabels[param.key] ?? effectParamLabels[param.key] ?? param.label;
 
 	return (
 		<SectionField
