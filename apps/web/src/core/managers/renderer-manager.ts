@@ -205,7 +205,7 @@ export class RendererManager {
 				onProgress?.({ progress: preparationWeight });
 				audioBuffer = await createTimelineAudioBuffer({
 					tracks,
-					mediaAssets: preparedMedia.mediaAssets,
+					mediaAssets,
 					duration,
 				});
 				onProgress?.({ progress: preparationWeight + audioWeight });
