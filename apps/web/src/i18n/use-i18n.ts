@@ -3,8 +3,14 @@
 import { useEffect } from "react";
 import { en } from "./locales/en";
 import { editorEn } from "./locales/en/editor";
+import { assetsEn } from "./locales/en/assets";
 import { useLocaleStore } from "./store";
-import { dictionaries, editorDictionaries, intlLocales } from "./runtime";
+import {
+	assetDictionaries,
+	dictionaries,
+	editorDictionaries,
+	intlLocales,
+} from "./runtime";
 
 type PluralForms = {
 	one: string;
@@ -18,6 +24,7 @@ export function useI18n() {
 	const setLocale = useLocaleStore((state) => state.setLocale);
 	const t = dictionaries[locale] ?? en;
 	const editorT = editorDictionaries[locale] ?? editorEn;
+	const assetsT = assetDictionaries[locale] ?? assetsEn;
 	const intlLocale = intlLocales[locale] ?? intlLocales.en;
 	const pluralRules = new Intl.PluralRules(intlLocale);
 
@@ -48,6 +55,7 @@ export function useI18n() {
 		setLocale,
 		t,
 		editorT,
+		assetsT,
 		intlLocale,
 		formatDate,
 		formatNumber,
