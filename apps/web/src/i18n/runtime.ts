@@ -16,6 +16,8 @@ import { legalEn } from "./locales/en/legal";
 import { legalRu } from "./locales/ru/legal";
 import { uiEn } from "./locales/en/ui";
 import { uiRu } from "./locales/ru/ui";
+import { propertiesEn } from "./locales/en/properties";
+import { propertiesRu } from "./locales/ru/properties";
 import { useLocaleStore } from "./store";
 import type { Locale, TranslationShape } from "./types";
 
@@ -28,6 +30,7 @@ export const changelogDictionaries: Record<Locale, TranslationShape<typeof chang
 export const siteDictionaries: Record<Locale, TranslationShape<typeof siteEn>> = { en: siteEn, ru: siteRu };
 export const legalDictionaries: Record<Locale, TranslationShape<typeof legalEn>> = { en: legalEn, ru: legalRu };
 export const uiDictionaries: Record<Locale, TranslationShape<typeof uiEn>> = { en: uiEn, ru: uiRu };
+export const propertyPanelDictionaries: Record<Locale, TranslationShape<typeof propertiesEn>> = { en: propertiesEn, ru: propertiesRu };
 
 export const intlLocales: Record<Locale, string> = {
 	en: "en-US",
@@ -47,6 +50,7 @@ export function getCurrentI18n() {
 		siteT: siteDictionaries[locale] ?? siteEn,
 		legalT: legalDictionaries[locale] ?? legalEn,
 		uiT: uiDictionaries[locale] ?? uiEn,
+		propertiesT: propertyPanelDictionaries[locale] ?? propertiesEn,
 		intlLocale: intlLocales[locale] ?? intlLocales.en,
 	};
 }
