@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useSoundsStore } from "@/sounds/sounds-store";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function useSoundSearch({
 	query,
@@ -8,6 +9,7 @@ export function useSoundSearch({
 	query: string;
 	commercialOnly: boolean;
 }) {
+	const { editorT } = useI18n();
 	const {
 		searchResults,
 		isSearching,
@@ -62,14 +64,14 @@ export function useSoundSearch({
 
 				setCurrentPage({ page: nextPage });
 				setHasNextPage({ hasNext: !!data.next });
-				setTotalCount(data.count);
+				setTotalCount({ count: data.count });
 			} else {
-				setSearchError({ error: `Load more failed: ${response.status}` });
+				console.error("Failed to load more sounds:", response.status);
+				setSearchError({ error: editorT.sounds.loadFailed });
 			}
-		} catch (err) {
-			setSearchError({
-				error: err instanceof Error ? err.message : "Load more failed",
-			});
+		} catch (error) {
+			console.error("Failed to load more sounds:", error);
+			setSearchError({ error: editorT.sounds.loadFailed });
 		} finally {
 			setLoadingMore({ loading: false });
 		}
@@ -108,14 +110,14 @@ export function useSoundSearch({
 						setTotalCount({ count: data.count });
 						setCurrentPage({ page: 1 });
 					} else {
-						setSearchError({ error: `Search failed: ${response.status}` });
+						console.error("Failed to search sounds:", response.status);
+						setSearchError({ error: editorT.sounds.loadFailed });
 					}
 				}
-			} catch (err) {
+			} catch (error) {
 				if (!ignore) {
-					setSearchError({
-						error: err instanceof Error ? err.message : "Search failed",
-					});
+					console.error("Failed to search sounds:", error);
+					setSearchError({ error: editorT.sounds.loadFailed });
 				}
 			} finally {
 				if (!ignore) {
@@ -140,6 +142,7 @@ export function useSoundSearch({
 		setHasNextPage,
 		setTotalCount,
 		resetPagination,
+		editorT.sounds.loadFailed,
 	]);
 
 	return {

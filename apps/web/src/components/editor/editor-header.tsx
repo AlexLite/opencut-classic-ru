@@ -32,11 +32,11 @@ import { useI18n } from "@/i18n/use-i18n";
 export function EditorHeader() {
 	return (
 		<header className="bg-background flex h-[3.4rem] items-center justify-between px-3 pt-0.5">
-			<div className="flex items-center gap-1">
+			<div className="flex min-w-0 items-center gap-1">
 				<ProjectDropdown />
 				<EditableProjectName />
 			</div>
-			<nav className="flex items-center gap-2">
+			<nav className="flex shrink-0 items-center gap-2">
 				<FeedbackPopover />
 				<ExportButton />
 				<LanguageSwitcher />
@@ -83,9 +83,9 @@ function ProjectDropdown() {
 					name: newName.trim(),
 				});
 			} catch (error) {
+				console.error("Failed to rename project:", error);
 				toast.error(t.editor.header.renameFailed, {
-					description:
-						error instanceof Error ? error.message : t.common.tryAgain,
+					description: t.common.tryAgain,
 				});
 			} finally {
 				setOpenDialog(null);
@@ -101,9 +101,9 @@ function ProjectDropdown() {
 				});
 				router.push("/projects");
 			} catch (error) {
+				console.error("Failed to delete project:", error);
 				toast.error(t.editor.header.deleteFailed, {
-					description:
-						error instanceof Error ? error.message : t.common.tryAgain,
+					description: t.common.tryAgain,
 				});
 			} finally {
 				setOpenDialog(null);
@@ -211,9 +211,9 @@ function EditableProjectName() {
 					name: newName,
 				});
 			} catch (error) {
+				console.error("Failed to rename project:", error);
 				toast.error(t.editor.header.renameFailed, {
-					description:
-						error instanceof Error ? error.message : t.common.tryAgain,
+					description: t.common.tryAgain,
 				});
 			}
 		}
@@ -245,7 +245,7 @@ function EditableProjectName() {
 			onKeyDown={handleKeyDown}
 			style={{ fieldSizing: "content" }}
 			className={cn(
-				"text-[0.9rem] h-8 px-2 py-1 rounded-sm bg-transparent outline-none cursor-pointer hover:bg-accent hover:text-accent-foreground",
+				"h-8 min-w-0 max-w-48 truncate rounded-sm bg-transparent px-2 py-1 text-[0.9rem] outline-none cursor-pointer hover:bg-accent hover:text-accent-foreground lg:max-w-80",
 				isEditing && "ring-1 ring-ring cursor-text hover:bg-transparent",
 			)}
 		/>
