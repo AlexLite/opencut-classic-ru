@@ -33,7 +33,7 @@ function formatKey({
 	labels,
 }: {
 	key: string;
-	labels: ShortcutKeyLabels;
+	labels: Readonly<ShortcutKeyLabels>;
 }): string {
 	return key
 		.replace("ctrl", getPlatformSpecialKey())
