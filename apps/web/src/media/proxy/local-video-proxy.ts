@@ -17,6 +17,8 @@ export interface LocalVideoRenderMezzanineResult {
 	file: File;
 }
 
+const MAX_FFMPEG_WASM_INPUT_BYTES = 2 * 1024 * 1024 * 1024;
+
 type WorkerResponse =
 	| { type: "progress"; id: string; progress: number }
 	| { type: "complete"; id: string; blob: Blob }
@@ -46,6 +48,12 @@ async function transcodeInWorker({
 	purpose: LocalVideoTranscodePurpose;
 	signal?: AbortSignal;
 }): Promise<Blob> {
+	if (file.size >= MAX_FFMPEG_WASM_INPUT_BYTES) {
+		throw new LocalProxyError(
+			"This file reaches the 2 GB input limit of the current ffmpeg.wasm core",
+			"input-too-large",
+		);
+	}
 	if (typeof Worker === "undefined") {
 		throw new LocalProxyError(
 			"Web Workers are unavailable in this browser",
