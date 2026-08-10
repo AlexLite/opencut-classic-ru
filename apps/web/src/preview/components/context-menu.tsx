@@ -38,7 +38,10 @@ export function PreviewContextMenu({
 			toast.error(previewT.failedToCopySnapshot, {
 				description: previewT.tryAgain,
 			});
+			return;
 		}
+
+		toast.success(previewT.snapshotCopied);
 	};
 
 	const handleSaveSnapshot = async () => {
