@@ -164,7 +164,11 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
 									)}
 									onClick={() => handleSceneSwitch(scene.id)}
 								>
-									<span>{scene.name}</span>
+									<span>
+										{scene.isMain && scene.name === "Main scene"
+											? editorT.scenes.mainScene
+											: scene.name}
+									</span>
 									<div className="flex items-center gap-2">
 										{((isSelectMode && selectedScenes.has(scene.id)) ||
 											(!isSelectMode && currentScene?.id === scene.id)) && (
