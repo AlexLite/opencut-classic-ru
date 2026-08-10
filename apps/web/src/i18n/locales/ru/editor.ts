@@ -174,7 +174,7 @@ export const editorRu = {
 		duration: "Длительность",
 		fileSize: "Размер файла",
 		ascending: "по возрастанию",
-		ddescending: "по убыванию",
+		descending: "по убыванию",
 		import: "Импорт",
 		upload: {
 			loadingSingle: "Загрузка медиафайла...",
