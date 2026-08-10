@@ -99,6 +99,16 @@ export const assetsEn = {
 			importedPrefix: "Imported ",
 			importedMiddle: " subtitle cue(s) and skipped ",
 			importedSuffix: " malformed cue(s).",
+			assInlineTagsPrefix: "Stripped unsupported ASS inline override tags from ",
+			assInlineTagsSuffix: " subtitle cue(s).",
+			assEffectsPrefix: "Ignored ASS event effects in ",
+			assEffectsSuffix: " subtitle cue(s).",
+			assMissingStylesPrefix: "Fell back to default subtitle styling for ",
+			assMissingStylesSuffix: " cue(s) that referenced missing ASS styles.",
+			assNonDialoguePrefix: "Ignored ",
+			assNonDialogueSuffix: " non-dialogue ASS event(s).",
+			assUnsupportedStyles:
+				"Ignored unsupported ASS style features such as outline, shadow, rotation, or scaling.",
 		},
 		diagnostics: {
 			noAudio: "No audio detected. Add a clip with audio to the timeline first.",
