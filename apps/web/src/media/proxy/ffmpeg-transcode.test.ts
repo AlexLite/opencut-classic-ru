@@ -18,14 +18,17 @@ describe("local ffmpeg transcode profiles", () => {
 		expect(args).toContain("+faststart");
 	});
 
-	test("render keeps source resolution and uses a higher quality mezzanine", () => {
+	test("render keeps source content size and uses a higher quality mezzanine", () => {
 		const args = buildLocalVideoTranscodeArgs({
 			inputName: "input.mov",
 			outputName: "render.mp4",
 			purpose: "render",
 		});
+		const joined = args.join(" ");
 
-		expect(args).not.toContain("-vf");
+		expect(joined).not.toContain("min(1280,iw)");
+		expect(joined).toContain("pad=ceil(iw/2)*2:ceil(ih/2)*2");
+		expect(args.indexOf("-c:v")).toBeLessThan(args.indexOf("-preset"));
 		expect(args).toContain("libx264");
 		expect(args).toContain("yuv420p");
 		expect(args).toContain("high");
