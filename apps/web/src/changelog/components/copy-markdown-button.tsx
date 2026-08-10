@@ -10,13 +10,26 @@ import {
 import type { Change } from "../utils";
 import { cn } from "@/utils/ui";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/i18n/use-i18n";
+
+function localizedSectionTitle({
+	type,
+	sectionTitles,
+}: {
+	type: string;
+	sectionTitles: Record<string, string>;
+}) {
+	return sectionTitles[type] ?? getSectionTitle({ type });
+}
 
 function buildMarkdown({
 	description,
 	changes,
+	sectionTitles,
 }: {
 	description?: string;
 	changes: Change[];
+	sectionTitles: Record<string, string>;
 }): string {
 	const lines: string[] = [];
 
@@ -27,10 +40,11 @@ function buildMarkdown({
 	const { grouped, orderedTypes } = groupAndOrderChanges({ changes });
 
 	for (const type of orderedTypes) {
+		const title = localizedSectionTitle({ type, sectionTitles });
 		if (isSectionCollapsible({ type })) {
 			lines.push(
 				buildCollapsibleMarkdownSection({
-					title: getSectionTitle({ type }),
+					title,
 					changes: grouped[type],
 				}),
 				"",
@@ -38,7 +52,7 @@ function buildMarkdown({
 			continue;
 		}
 
-		lines.push(`## ${getSectionTitle({ type })}`);
+		lines.push(`## ${title}`);
 		for (const change of grouped[type]) {
 			lines.push(`- ${change.text}`);
 		}
@@ -68,9 +82,14 @@ export function CopyMarkdownButton({
 	changes: Change[];
 }) {
 	const [copied, setCopied] = useState(false);
+	const { changelogT } = useI18n();
 
 	const handleCopy = async () => {
-		const markdown = buildMarkdown({ description, changes });
+		const markdown = buildMarkdown({
+			description,
+			changes,
+			sectionTitles: changelogT.sections as Record<string, string>,
+		});
 		await navigator.clipboard.writeText(markdown);
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
@@ -85,14 +104,14 @@ export function CopyMarkdownButton({
 				"flex items-center gap-1.5",
 				copied && "pointer-events-none",
 			)}
-			title="Copy as markdown"
+			title={changelogT.copyAsMarkdown}
 		>
 			{copied ? (
 				<CheckIcon className="size-4" />
 			) : (
 				<ClipboardIcon className="size-4" />
 			)}
-			{copied ? "Copied!" : "Copy markdown"}
+			{copied ? changelogT.copied : changelogT.copyAsMarkdown}
 		</Button>
 	);
 }
