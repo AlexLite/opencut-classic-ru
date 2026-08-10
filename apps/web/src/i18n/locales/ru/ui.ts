@@ -24,6 +24,11 @@ export const uiRu = {
 		opacity: "Прозрачность",
 		open: "Открыть выбор цвета",
 	},
+	input: {
+		clear: "Очистить поле",
+		showPassword: "Показать пароль",
+		hidePassword: "Скрыть пароль",
+	},
 	breadcrumb: {
 		label: "Навигационная цепочка",
 		more: "Ещё",
