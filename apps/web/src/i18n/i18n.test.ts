@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readdir, readFile } from "node:fs/promises";
+import { join, relative, sep } from "node:path";
 import { en } from "./locales/en";
 import { ru } from "./locales/ru";
 import { editorEn } from "./locales/en/editor";
@@ -29,6 +31,20 @@ function collectLeafKeys(value: unknown, prefix = ""): string[] {
 		const nextPrefix = prefix ? `${prefix}.${key}` : key;
 		return collectLeafKeys(child, nextPrefix);
 	});
+}
+
+async function collectSourceFiles(directory: string): Promise<string[]> {
+	const entries = await readdir(directory, { withFileTypes: true });
+	const files = await Promise.all(
+		entries.map(async (entry) => {
+			const path = join(directory, entry.name);
+			if (entry.isDirectory()) return collectSourceFiles(path);
+			return entry.isFile() && (path.endsWith(".ts") || path.endsWith(".tsx"))
+				? [path]
+				: [];
+		}),
+	);
+	return files.flat();
 }
 
 class MemoryStorage implements Storage {
@@ -80,6 +96,28 @@ describe("i18n dictionaries", () => {
 			);
 		});
 	}
+});
+
+describe("i18n source hygiene", () => {
+	test("keeps Cyrillic text inside locale dictionaries", async () => {
+		const sourceRoot = join(process.cwd(), "src");
+		const localeDirectory = `${sep}i18n${sep}locales${sep}`;
+		const sourceFiles = (await collectSourceFiles(sourceRoot)).filter(
+			(path) => !path.includes(localeDirectory),
+		);
+		const violations: string[] = [];
+
+		for (const path of sourceFiles) {
+			const content = await readFile(path, "utf8");
+			content.split(/\r?\n/).forEach((line, index) => {
+				if (/[А-Яа-яЁё]/.test(line)) {
+					violations.push(`${relative(sourceRoot, path)}:${index + 1}`);
+				}
+			});
+		}
+
+		expect(violations).toEqual([]);
+	});
 });
 
 describe("locale store", () => {
