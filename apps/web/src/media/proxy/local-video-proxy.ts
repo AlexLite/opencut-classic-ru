@@ -41,6 +41,18 @@ export function isLocalVideoTranscodeAbort(error: unknown): boolean {
 	return error instanceof Error && error.name === "AbortError";
 }
 
+function createProxyWorker(): Worker {
+	try {
+		return new Worker(FFMPEG_PROXY_WORKER_PATH);
+	} catch (error) {
+		throw new LocalProxyError(
+			"The local video Worker could not be started",
+			"worker-unavailable",
+			{ cause: error },
+		);
+	}
+}
+
 async function transcodeInWorker({
 	file,
 	onProgress,
@@ -66,7 +78,7 @@ async function transcodeInWorker({
 	}
 	if (signal?.aborted) throw createAbortError();
 
-	const worker = new Worker(FFMPEG_PROXY_WORKER_PATH);
+	const worker = createProxyWorker();
 	const id =
 		typeof crypto.randomUUID === "function"
 			? crypto.randomUUID()
@@ -106,8 +118,8 @@ async function transcodeInWorker({
 				finish(() =>
 					reject(
 						new LocalProxyError(
-							event.message || "Proxy worker failed",
-							"transcode-failed",
+							event.message || "The local video Worker failed to start",
+							"worker-unavailable",
 						),
 					),
 				);
