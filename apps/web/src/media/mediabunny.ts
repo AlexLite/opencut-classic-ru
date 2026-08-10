@@ -46,7 +46,9 @@ export async function readVideoFile({
 
 		let thumbnailUrl: string | null = null;
 		if (canDecode) {
-			const sink = new VideoSampleSink(videoTrack);
+			const sink = new VideoSampleSink(videoTrack, {
+				hardwareAcceleration: "prefer-hardware",
+			});
 			const frame = await sink.getSample(1);
 			if (frame) {
 				try {
@@ -169,7 +171,7 @@ function createWavBlob({ samples }: { samples: Float32Array }): Blob {
 	writeString({ view, offset: 12, str: "fmt " });
 	view.setUint32(16, 16, true);
 	view.setUint16(20, 1, true);
-	view.setUint16(22, numChannels, true);
+	view.setUint16(22, numChannels);
 	view.setUint32(24, SAMPLE_RATE, true);
 	view.setUint32(28, SAMPLE_RATE * numChannels * bytesPerSample, true);
 	view.setUint16(32, numChannels * bytesPerSample, true);
