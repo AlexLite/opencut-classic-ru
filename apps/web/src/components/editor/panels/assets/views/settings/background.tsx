@@ -213,12 +213,6 @@ export function BackgroundContent() {
 		},
 	] as const;
 
-	const blurLabels: Record<number, string> = {
-		100: t.settings.blurLight,
-		200: t.settings.blurMedium,
-		500: t.settings.blurHeavy,
-	};
-
 	const handleBlurSelect = useCallback(
 		async (blurIntensity: number) => {
 			await editor.project.updateSettings({
@@ -271,25 +265,29 @@ export function BackgroundContent() {
 		[commitBackgroundColor],
 	);
 
-	const blurPreviews = useMemo(
-		() =>
-			BACKGROUND_BLUR_INTENSITY_PRESETS.map((blur) => (
-				<BlurPreview
-					key={blur.value}
-					blur={{ ...blur, label: blurLabels[blur.value] ?? blur.label }}
-					isSelected={isBlurBackground && currentBlurIntensity === blur.value}
-					onSelect={() => handleBlurSelect(blur.value)}
-				/>
-			)),
-		[
-			isBlurBackground,
-			currentBlurIntensity,
-			handleBlurSelect,
-			t.settings.blurLight,
-			t.settings.blurMedium,
-			t.settings.blurHeavy,
-		],
-	);
+	const blurPreviews = useMemo(() => {
+		const blurLabels: Record<number, string> = {
+			100: t.settings.blurLight,
+			200: t.settings.blurMedium,
+			500: t.settings.blurHeavy,
+		};
+
+		return BACKGROUND_BLUR_INTENSITY_PRESETS.map((blur) => (
+			<BlurPreview
+				key={blur.value}
+				blur={{ ...blur, label: blurLabels[blur.value] ?? blur.label }}
+				isSelected={isBlurBackground && currentBlurIntensity === blur.value}
+				onSelect={() => handleBlurSelect(blur.value)}
+			/>
+		));
+	}, [
+		isBlurBackground,
+		currentBlurIntensity,
+		handleBlurSelect,
+		t.settings.blurLight,
+		t.settings.blurMedium,
+		t.settings.blurHeavy,
+	]);
 
 	return (
 		<div className="flex flex-col">
