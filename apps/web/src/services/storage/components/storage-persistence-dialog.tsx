@@ -10,30 +10,31 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { useStoragePersistence } from "@/services/storage/use-storage-persistence";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function StoragePersistenceDialog() {
 	const { showDialog, onConfirm, onDismiss } = useStoragePersistence();
+	const { t } = useI18n();
 
 	return (
 		<Dialog open={showDialog} onOpenChange={(open) => !open && onDismiss()}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>Don't lose your projects</DialogTitle>
+					<DialogTitle>{t.storage.persistenceTitle}</DialogTitle>
 				</DialogHeader>
 				<DialogBody>
 					<p className="text-base text-muted-foreground">
-						Your browser can automatically delete your projects when storage
-						runs low.
+						{t.storage.persistenceWarning}
 					</p>
 					<p className="text-base text-muted-foreground">
-						Allow OpenCut to protect them?
+						{t.storage.persistenceQuestion}
 					</p>
 				</DialogBody>
 				<DialogFooter>
 					<Button variant="outline" onClick={onDismiss}>
-						Not now
+						{t.storage.notNow}
 					</Button>
-					<Button onClick={onConfirm}>Allow</Button>
+					<Button onClick={onConfirm}>{t.storage.allow}</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
