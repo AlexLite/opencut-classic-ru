@@ -136,7 +136,7 @@ export const en = {
 		roadmapDescription:
 			"If you're curious, check out our roadmap [here](https://opencut.app/roadmap)",
 		testingTitle: "🦋 Have fun testing!",
-		discordDescriptionPrefix: "Join our [Discord](,",
+		discordDescriptionPrefix: "Join our [Discord](",
 		discordDescriptionSuffix:
 			"), chat with cool people and share feedback to help make OpenCut the best editor ever.",
 		defaultTitle: "OpenCut Onboarding",
