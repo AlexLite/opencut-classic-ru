@@ -108,6 +108,45 @@ export function Captions() {
 		return fallback;
 	};
 
+	const localizeParserWarning = (warning: string) => {
+		const inlineTagsMatch = warning.match(
+			/^Stripped unsupported ASS inline override tags from (\d+) subtitle cue\(s\)\.$/,
+		);
+		if (inlineTagsMatch) {
+			return `${captionsT.warnings.assInlineTagsPrefix}${inlineTagsMatch[1]}${captionsT.warnings.assInlineTagsSuffix}`;
+		}
+
+		const effectsMatch = warning.match(
+			/^Ignored ASS event effects in (\d+) subtitle cue\(s\)\.$/,
+		);
+		if (effectsMatch) {
+			return `${captionsT.warnings.assEffectsPrefix}${effectsMatch[1]}${captionsT.warnings.assEffectsSuffix}`;
+		}
+
+		const missingStylesMatch = warning.match(
+			/^Fell back to default subtitle styling for (\d+) cue\(s\) that referenced missing ASS styles\.$/,
+		);
+		if (missingStylesMatch) {
+			return `${captionsT.warnings.assMissingStylesPrefix}${missingStylesMatch[1]}${captionsT.warnings.assMissingStylesSuffix}`;
+		}
+
+		const nonDialogueMatch = warning.match(
+			/^Ignored (\d+) non-dialogue ASS event\(s\)\.$/,
+		);
+		if (nonDialogueMatch) {
+			return `${captionsT.warnings.assNonDialoguePrefix}${nonDialogueMatch[1]}${captionsT.warnings.assNonDialogueSuffix}`;
+		}
+
+		if (
+			warning ===
+			"Ignored unsupported ASS style features such as outline, shadow, rotation, or scaling."
+		) {
+			return captionsT.warnings.assUnsupportedStyles;
+		}
+
+		return warning;
+	};
+
 	const handleProgress = (progress: TranscriptionProgress) => {
 		if (progress.status === "loading-model") {
 			dispatch({
@@ -195,7 +234,7 @@ export function Captions() {
 				return;
 			}
 
-			const nextWarnings = [...result.warnings];
+			const nextWarnings = result.warnings.map(localizeParserWarning);
 			if (result.skippedCueCount > 0) {
 				nextWarnings.unshift(
 					`${captionsT.warnings.importedPrefix}${result.captions.length}${captionsT.warnings.importedMiddle}${result.skippedCueCount}${captionsT.warnings.importedSuffix}`,
