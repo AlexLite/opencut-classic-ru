@@ -21,7 +21,6 @@ import { ScenesView } from "@/components/editor/scenes-view";
 import { type TActionWithOptionalArgs, invokeAction } from "@/actions";
 import {
 	canToggleSourceAudio,
-	getSourceAudioActionLabel,
 	isSourceAudioSeparated,
 } from "@/timeline/audio-separation";
 import { hasMediaId } from "@/timeline";
@@ -49,6 +48,7 @@ import { OcRippleIcon } from "@/components/icons";
 import { GraphEditorPopover } from "./graph-editor/popover";
 import { PopoverTrigger } from "@/components/ui/popover";
 import { useGraphEditorController } from "./graph-editor/use-controller";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function TimelineToolbar({
 	zoomLevel,
@@ -92,6 +92,7 @@ function ToolbarLeftSection() {
 	);
 	const { selectedElements } = useElementSelection();
 	const graphEditor = useGraphEditorController();
+	const { timelineT } = useI18n();
 	const isCurrentlyBookmarked = useEditor((e) =>
 		e.scenes.isBookmarked({ time: e.playback.getCurrentTime() }),
 	);
@@ -116,17 +117,14 @@ function ToolbarLeftSection() {
 	const canToggleSelectedSourceAudio =
 		!!selectedElement &&
 		canToggleSourceAudio(selectedElement.element, selectedMediaAsset);
-	const sourceAudioLabel =
-		selectedElement?.element.type === "video"
-			? getSourceAudioActionLabel({
-					element: selectedElement.element,
-				})
-			: "Extract audio";
 	const isSelectedSourceAudioSeparated =
 		selectedElement?.element.type === "video" &&
 		isSourceAudioSeparated({
 			element: selectedElement.element,
 		});
+	const sourceAudioLabel = isSelectedSourceAudioSeparated
+		? timelineT.toolbar.restoreAudio
+		: timelineT.toolbar.extractAudio;
 
 	const handleAction = ({
 		action,
@@ -144,19 +142,19 @@ function ToolbarLeftSection() {
 			<TooltipProvider delayDuration={500}>
 				<ToolbarButton
 					icon={<HugeiconsIcon icon={ScissorIcon} />}
-					tooltip="Split element"
+					tooltip={timelineT.toolbar.split}
 					onClick={({ event }) => handleAction({ action: "split", event })}
 				/>
 
 				<ToolbarButton
 					icon={<HugeiconsIcon icon={AlignLeftIcon} />}
-					tooltip="Split left"
+					tooltip={timelineT.toolbar.splitLeft}
 					onClick={({ event }) => handleAction({ action: "split-left", event })}
 				/>
 
 				<ToolbarButton
 					icon={<HugeiconsIcon icon={AlignRightIcon} />}
-					tooltip="Split right"
+					tooltip={timelineT.toolbar.splitRight}
 					onClick={({ event }) =>
 						handleAction({ action: "split-right", event })
 					}
@@ -177,7 +175,7 @@ function ToolbarLeftSection() {
 
 				<ToolbarButton
 					icon={<HugeiconsIcon icon={Copy01Icon} />}
-					tooltip="Duplicate element"
+					tooltip={timelineT.toolbar.duplicate}
 					onClick={({ event }) =>
 						handleAction({ action: "duplicate-selected", event })
 					}
@@ -185,14 +183,14 @@ function ToolbarLeftSection() {
 
 				<ToolbarButton
 					icon={<HugeiconsIcon icon={SnowIcon} />}
-					tooltip="Freeze frame (coming soon)"
+					tooltip={timelineT.toolbar.freezeFrame}
 					disabled={true}
 					onClick={({ event: _event }) => {}}
 				/>
 
 				<ToolbarButton
 					icon={<HugeiconsIcon icon={Delete02Icon} />}
-					tooltip="Delete element"
+					tooltip={timelineT.toolbar.delete}
 					onClick={({ event }) =>
 						handleAction({ action: "delete-selected", event })
 					}
@@ -204,7 +202,11 @@ function ToolbarLeftSection() {
 					<ToolbarButton
 						icon={<HugeiconsIcon icon={Bookmark02Icon} />}
 						isActive={isCurrentlyBookmarked}
-						tooltip={isCurrentlyBookmarked ? "Remove bookmark" : "Add bookmark"}
+						tooltip={
+							isCurrentlyBookmarked
+								? timelineT.toolbar.removeBookmark
+								: timelineT.toolbar.addBookmark
+						}
 						onClick={({ event }) =>
 							handleAction({ action: "toggle-bookmark", event })
 						}
@@ -248,11 +250,12 @@ function ToolbarLeftSection() {
 function SceneSelector() {
 	const editor = useEditor();
 	const currentScene = editor.scenes.getActiveScene();
+	const { timelineT } = useI18n();
 
 	return (
 		<div>
 			<SplitButton className="border-foreground/10 border">
-				<SplitButtonLeft>{currentScene?.name || "No Scene"}</SplitButtonLeft>
+				<SplitButtonLeft>{currentScene?.name || timelineT.toolbar.noScene}</SplitButtonLeft>
 				<SplitButtonSeparator />
 				<ScenesView>
 					<SplitButtonRight onClick={() => {}}>
@@ -279,6 +282,7 @@ function ToolbarRightSection({
 	const rippleEditingEnabled = useTimelineStore((s) => s.rippleEditingEnabled);
 	const toggleSnapping = useTimelineStore((s) => s.toggleSnapping);
 	const toggleRippleEditing = useTimelineStore((s) => s.toggleRippleEditing);
+	const { timelineT } = useI18n();
 
 	return (
 		<div className="flex items-center gap-1">
@@ -286,14 +290,14 @@ function ToolbarRightSection({
 				<ToolbarButton
 					icon={<HugeiconsIcon icon={MagnetIcon} />}
 					isActive={snappingEnabled}
-					tooltip="Auto snapping"
+					tooltip={timelineT.toolbar.autoSnapping}
 					onClick={() => toggleSnapping()}
 				/>
 
 				<ToolbarButton
 					icon={<OcRippleIcon size={24} className="scale-110" />}
 					isActive={rippleEditingEnabled}
-					tooltip="Ripple editing"
+					tooltip={timelineT.toolbar.rippleEditing}
 					onClick={() => toggleRippleEditing()}
 				/>
 			</TooltipProvider>
@@ -305,6 +309,8 @@ function ToolbarRightSection({
 					variant="text"
 					size="icon"
 					onClick={() => onZoom({ direction: "out" })}
+					aria-label={timelineT.toolbar.zoomOut}
+					title={timelineT.toolbar.zoomOut}
 				>
 					<HugeiconsIcon icon={SearchMinusIcon} />
 				</Button>
@@ -317,11 +323,14 @@ function ToolbarRightSection({
 					min={0}
 					max={1}
 					step={0.005}
+					aria-label={timelineT.toolbar.zoom}
 				/>
 				<Button
 					variant="text"
 					size="icon"
 					onClick={() => onZoom({ direction: "in" })}
+					aria-label={timelineT.toolbar.zoomIn}
+					title={timelineT.toolbar.zoomIn}
 				>
 					<HugeiconsIcon icon={SearchAddIcon} />
 				</Button>
@@ -355,6 +364,7 @@ function ToolbarButton({
 				"rounded-sm",
 				disabled ? "cursor-not-allowed opacity-50" : "",
 			)}
+			aria-label={tooltip}
 		>
 			{icon}
 		</Button>
