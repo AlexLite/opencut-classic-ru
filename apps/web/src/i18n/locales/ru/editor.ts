@@ -75,6 +75,7 @@ export const editorRu = {
 	},
 	scenes: {
 		title: "Сцены",
+		mainScene: "Основная сцена",
 		selectScenes: "Выбор сцен",
 		selectToDelete: "Выберите сцены для удаления",
 		switchDescription: "Переключайтесь между сценами проекта",
@@ -173,7 +174,7 @@ export const editorRu = {
 		duration: "Длительность",
 		fileSize: "Размер файла",
 		ascending: "по возрастанию",
-		descending: "по убыванию",
+		ddescending: "по убыванию",
 		import: "Импорт",
 		upload: {
 			loadingSingle: "Загрузка медиафайла...",
