@@ -35,4 +35,8 @@ export const uiEn = {
 	storage: {
 		unsupportedWarning: "Storage not fully supported. Some features may not work.",
 	},
+	draggableItem: {
+		addToTimeline: "Add to timeline",
+		addOrDrag: "Add to timeline or drag to position",
+	},
 } as const;
