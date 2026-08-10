@@ -24,6 +24,7 @@ import {
 import { usePropertyDraft } from "../hooks/use-property-draft";
 import { KeyframeToggle } from "./keyframe-toggle";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function PropertyParamField({
 	param,
@@ -42,15 +43,19 @@ export function PropertyParamField({
 		onToggle: () => void;
 	};
 }) {
+	const { editorT } = useI18n();
+	const paramLabels = editorT.properties.paramLabels as Record<string, string>;
+	const label = paramLabels[param.key] ?? param.label;
+
 	return (
 		<SectionField
-			label={param.label}
+			label={label}
 			beforeLabel={
 				keyframe && param.keyframable !== false ? (
 					<KeyframeToggle
 						isActive={keyframe.isActive}
 						isDisabled={keyframe.isDisabled}
-						title={`Toggle ${param.label.toLowerCase()} keyframe`}
+						title={`${editorT.properties.keyframe}: ${label}`}
 						onToggle={keyframe.onToggle}
 					/>
 				) : undefined
@@ -77,6 +82,9 @@ function ParamInput({
 	onPreview: (value: ParamValue) => void;
 	onCommit: () => void;
 }) {
+	const { editorT } = useI18n();
+	const optionLabels = editorT.properties.optionLabels as Record<string, string>;
+
 	if (param.type === "number") {
 		return (
 			<NumberParamField
@@ -115,7 +123,7 @@ function ParamInput({
 				<SelectContent>
 					{param.options.map((option) => (
 						<SelectItem key={option.value} value={option.value}>
-							{option.label}
+							{optionLabels[option.value] ?? option.label}
 						</SelectItem>
 					))}
 				</SelectContent>
