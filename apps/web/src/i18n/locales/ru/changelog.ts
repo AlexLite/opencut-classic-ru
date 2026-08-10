@@ -2,6 +2,10 @@ import type { changelogEn } from "../en/changelog";
 import type { TranslationShape } from "../../types";
 
 export const changelogRu = {
+	page: {
+		title: "Список изменений",
+		description: "Что нового в OpenCut",
+	},
 	dismiss: "Скрыть",
 	seeFullChangelog: "Открыть полный список изменений",
 	copyAsMarkdown: "Копировать как Markdown",
