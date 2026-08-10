@@ -15,6 +15,8 @@ import { siteEn } from "./locales/en/site";
 import { siteRu } from "./locales/ru/site";
 import { legalEn } from "./locales/en/legal";
 import { legalRu } from "./locales/ru/legal";
+import { uiEn } from "./locales/en/ui";
+import { uiRu } from "./locales/ru/ui";
 
 function collectLeafKeys(value: unknown, prefix = ""): string[] {
 	if (typeof value !== "object" || value === null) {
@@ -36,6 +38,7 @@ const dictionaryPairs = [
 	["changelog", changelogEn, changelogRu],
 	["site", siteEn, siteRu],
 	["legal", legalEn, legalRu],
+	["ui", uiEn, uiRu],
 ] as const;
 
 describe("i18n dictionaries", () => {
@@ -44,7 +47,6 @@ describe("i18n dictionaries", () => {
 			expect(collectLeafKeys(russian).sort()).toEqual(
 				collectLeafKeys(english).sort(),
 			);
-		});
 	}
 });
 
