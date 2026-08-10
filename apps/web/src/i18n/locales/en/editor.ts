@@ -100,6 +100,15 @@ export const editorEn = {
 		clickToEdit: "Click to edit shortcut",
 		conflictKeyPrefix: "Key",
 		conflictBoundTo: "is already bound to",
+		keyLabels: {
+			shift: "Shift",
+			space: "Space",
+			home: "Home",
+			enter: "Enter",
+			end: "End",
+			delete: "Delete",
+			backspace: "Backspace",
+		},
 		categories: {
 			playback: "Playback",
 			navigation: "Navigation",
