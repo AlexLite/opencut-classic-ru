@@ -188,14 +188,14 @@ function ShortcutItem({
 		] ?? shortcut.description;
 
 	return (
-		<div className="flex items-center justify-between">
-			<div className="flex items-center gap-3">
+		<div className="flex flex-col gap-2 py-1 sm:flex-row sm:items-center sm:justify-between">
+			<div className="flex min-w-0 items-center gap-3">
 				{shortcut.icon && (
-					<div className="text-muted-foreground">{shortcut.icon}</div>
+					<div className="text-muted-foreground shrink-0">{shortcut.icon}</div>
 				)}
-				<span className="text-sm">{description}</span>
+				<span className="min-w-0 text-sm break-words">{description}</span>
 			</div>
-			<div className="flex items-center gap-2">
+			<div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
 				{displayKeys.map((key: string, index: number) => (
 					<div key={key} className="flex items-center gap-2">
 						<div className="flex items-center gap-1">
