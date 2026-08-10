@@ -2,13 +2,16 @@ import { PlusSignIcon, RulerIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@/components/ui/button";
 import type { GuideDefinition } from "@/guides/types";
+import { useI18n } from "@/i18n/use-i18n";
 
 function CustomGuideOptions() {
+	const { previewT } = useI18n();
+
 	return (
 		<div className="flex gap-2">
 			<Button variant="outline" size="sm" className="flex-1">
 				<HugeiconsIcon icon={PlusSignIcon} />
-				Add guide line
+				{previewT.guides.addGuideLine}
 			</Button>
 		</div>
 	);
