@@ -4,6 +4,7 @@ import * as React from "react";
 import { Dialog as SheetPrimitive } from "radix-ui";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
+import { useI18n } from "@/i18n/use-i18n";
 import { cn } from "@/utils/ui";
 import { useOverlayOpenChange } from "./use-overlay-open-change";
 
@@ -12,10 +13,7 @@ function Sheet({
 	onOpenChange,
 	...props
 }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-	const handleOpenChange = useOverlayOpenChange({
-		open,
-		onOpenChange,
-	});
+	const handleOpenChange = useOverlayOpenChange({ open, onOpenChange });
 	return (
 		<SheetPrimitive.Root
 			open={open}
@@ -26,9 +24,7 @@ function Sheet({
 }
 
 const SheetTrigger = SheetPrimitive.Trigger;
-
 const SheetClose = SheetPrimitive.Close;
-
 const SheetPortal = SheetPrimitive.Portal;
 
 const SheetOverlay = React.forwardRef<
@@ -59,9 +55,7 @@ const sheetVariants = cva(
 					"inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
 			},
 		},
-		defaultVariants: {
-			side: "right",
-		},
+		defaultVariants: { side: "right" },
 	},
 );
 
@@ -72,46 +66,41 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
 	React.ElementRef<typeof SheetPrimitive.Content>,
 	SheetContentProps
->(({ side = "right", className, children, ...props }, ref) => (
-	<SheetPortal>
-		<SheetOverlay />
-		<SheetPrimitive.Content
-			ref={ref}
-			className={cn(sheetVariants({ side }), className)}
-			onOpenAutoFocus={(e) => {
-				e.preventDefault();
-				e.stopPropagation();
-			}}
-			{...props}
-		>
-			<SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 cursor-pointer rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
-				<X className="size-5" />
-				<span className="sr-only">Close</span>
-			</SheetPrimitive.Close>
-			{children}
-		</SheetPrimitive.Content>
-	</SheetPortal>
-));
+>(({ side = "right", className, children, ...props }, ref) => {
+	const { t } = useI18n();
+
+	return (
+		<SheetPortal>
+			<SheetOverlay />
+			<SheetPrimitive.Content
+				ref={ref}
+				className={cn(sheetVariants({ side }), className)}
+				onOpenAutoFocus={(e) => {
+					e.preventDefault();
+					e.stopPropagation();
+				}}
+				{...props}
+			>
+				<SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 cursor-pointer rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+					<X className="size-5" />
+					<span className="sr-only">{t.common.close}</span>
+				</SheetPrimitive.Close>
+				{children}
+			</SheetPrimitive.Content>
+		</SheetPortal>
+	);
+});
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
-const SheetHeader = ({
-	className,
-	...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
 	<div
-		className={cn(
-			"flex flex-col space-y-2 text-center sm:text-left",
-			className,
-		)}
+		className={cn("flex flex-col space-y-2 text-center sm:text-left", className)}
 		{...props}
 	/>
 );
 SheetHeader.displayName = "SheetHeader";
 
-const SheetFooter = ({
-	className,
-	...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+const SheetFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
 	<div
 		className={cn(
 			"flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-4",
