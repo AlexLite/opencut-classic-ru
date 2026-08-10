@@ -9,7 +9,8 @@ import { renderThumbnailDataUrl } from "./thumbnail";
 import { inspectVideoDecodeCapability } from "./video-capability-inspector";
 import { createLocalVideoProxy } from "./proxy/local-video-proxy";
 import { classifyLocalProxyError } from "./proxy/proxy-errors";
-import type { VideoCodecFamily } from "./codec-info";
+import { inspectVideoCodec, type VideoCodecFamily } from "./codec-info";
+import { resolveImportDecodability } from "./import-decode-decision";
 
 export interface ProcessedMediaAsset extends Omit<MediaAsset, "id"> {}
 
@@ -160,11 +161,16 @@ export async function processMediaAssets({
 				height = result.height;
 				reportCurrentFileProgress(1);
 			} else if (fileType === "video") {
-				try {
-					const [videoData, decodeInspection] = await Promise.all([
-						readVideoFile({ file }),
-						inspectVideoDecodeCapability({ file }),
-					]);
+				const [videoResult, inspectionResult] = await Promise.allSettled([
+					readVideoFile({ file }),
+					inspectVideoDecodeCapability({ file }),
+				]);
+
+				let mediabunnyCanDecode: boolean | undefined;
+				let webCodecsSupported: boolean | undefined;
+
+				if (videoResult.status === "fulfilled") {
+					const videoData = videoResult.value;
 					duration = videoData.duration;
 					width = videoData.width;
 					height = videoData.height;
@@ -173,48 +179,64 @@ export async function processMediaAssets({
 						: undefined;
 					hasAudio = videoData.hasAudio;
 					thumbnailUrl = videoData.thumbnailUrl ?? undefined;
-					nativeDecodable = decodeInspection.capability.supported;
-					sourceCodecInfo = decodeInspection.codecInfo;
+					mediabunnyCanDecode = videoData.canDecode;
+					sourceCodecInfo = inspectVideoCodec({
+						codec: videoData.codec,
+						decoderConfig: null,
+					});
+				} else {
+					console.warn("Could not read video metadata with Mediabunny:", videoResult.reason);
+				}
 
-					if (!nativeDecodable) {
-						const description = getProxyDescription({
-							family: decodeInspection.codecInfo.family,
-						});
-						if (shouldWarnAboutLocalTranscode({ file })) {
-							toast.warning(proxyMessages.largeFileTitle, {
-								description: proxyMessages.largeFileDescription,
-							});
-						}
+				if (inspectionResult.status === "fulfilled") {
+					webCodecsSupported = inspectionResult.value.capability.supported;
+					sourceCodecInfo = inspectionResult.value.codecInfo;
+				} else {
+					console.warn(
+						"Could not inspect exact WebCodecs decoder capability:",
+						inspectionResult.reason,
+					);
+				}
 
-						const proxyToastId = toast.loading(proxyMessages.creatingTitle, {
-							description,
+				nativeDecodable = resolveImportDecodability({
+					mediabunnyCanDecode,
+					webCodecsSupported,
+				});
+
+				if (!nativeDecodable) {
+					const description = getProxyDescription({
+						family: sourceCodecInfo?.family ?? "unknown",
+					});
+					if (shouldWarnAboutLocalTranscode({ file })) {
+						toast.warning(proxyMessages.largeFileTitle, {
+							description: proxyMessages.largeFileDescription,
 						});
-						try {
-							const proxy = await createLocalVideoProxy({
-								file,
-								onProgress: (progress) => {
-									reportCurrentFileProgress(progress);
-									toast.loading(proxyMessages.creatingTitle, {
-										id: proxyToastId,
-										description: `${description} ${Math.round(progress * 100)}%`,
-									});
-								},
-							});
-							previewFile = proxy.file;
-							previewUrl = URL.createObjectURL(proxy.file);
-							const proxyData = await readVideoFile({ file: proxy.file });
-							thumbnailUrl = proxyData.thumbnailUrl ?? thumbnailUrl;
-							toast.success(proxyMessages.ready, { id: proxyToastId });
-						} catch (error) {
-							const normalized = classifyLocalProxyError(error);
-							proxyFallbackFailure = normalized.code;
-							toast.dismiss(proxyToastId);
-						}
 					}
-				} catch (error) {
-					const message =
-						error instanceof Error ? error.message : "Could not process video";
-					toast.error(`Couldn't process ${file.name}`, { description: message });
+
+					const proxyToastId = toast.loading(proxyMessages.creatingTitle, {
+						description,
+					});
+					try {
+						const proxy = await createLocalVideoProxy({
+							file,
+							onProgress: (progress) => {
+								reportCurrentFileProgress(progress);
+								toast.loading(proxyMessages.creatingTitle, {
+									id: proxyToastId,
+									description: `${description} ${Math.round(progress * 100)}%`,
+								});
+							},
+						});
+						previewFile = proxy.file;
+						previewUrl = URL.createObjectURL(proxy.file);
+						const proxyData = await readVideoFile({ file: proxy.file });
+						thumbnailUrl = proxyData.thumbnailUrl ?? thumbnailUrl;
+						toast.success(proxyMessages.ready, { id: proxyToastId });
+					} catch (error) {
+						const normalized = classifyLocalProxyError(error);
+						proxyFallbackFailure = normalized.code;
+						toast.dismiss(proxyToastId);
+					}
 				}
 			} else if (fileType === "audio") {
 				duration = await getMediaDuration({ file });
