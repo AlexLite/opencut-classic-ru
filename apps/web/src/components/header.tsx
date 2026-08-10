@@ -98,7 +98,7 @@ export function Header() {
 						</ContextMenuContent>
 					</ContextMenu>
 
-					<nav className="hidden items-center gap-4 md:flex">
+					<nav className="hidden items-center gap-4 lg:flex">
 						{links.map((link) => (
 							<Link key={link.href} href={link.href}>
 								<Button variant="text" className="p-0 text-sm">
@@ -110,7 +110,7 @@ export function Header() {
 				</div>
 
 				<div className="relative z-10">
-					<div className="flex items-center gap-3 md:hidden">
+					<div className="flex items-center gap-3 lg:hidden">
 						<LanguageSwitcher />
 						<Button
 							variant="text"
@@ -121,7 +121,7 @@ export function Header() {
 							<HugeiconsIcon icon={Menu02Icon} size={30} />
 						</Button>
 					</div>
-					<div className="hidden items-center gap-3 md:flex">
+					<div className="hidden items-center gap-3 lg:flex">
 						<Link href={SOCIAL_LINKS.github}>
 							<Button className="bg-background text-sm" variant="outline">
 								<HugeiconsIcon icon={GithubIcon} className="size-4" />
