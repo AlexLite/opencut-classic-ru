@@ -4,6 +4,7 @@ import type {
 } from "@/animation/types";
 import type { TimelineTrack } from "@/timeline";
 import { getElementKeyframes } from "@/animation";
+import { getCurrentI18n } from "@/i18n/runtime";
 import { KEYFRAME_LANE_HEIGHT_PX } from "./layout";
 
 export interface ExpandedRow {
@@ -23,26 +24,20 @@ const PROPERTY_GROUPS: PropertyGroupDefinition[] = [
 	{ matchesPath: (path) => path.startsWith("effects.") },
 ];
 
-const PROPERTY_LABELS: Partial<Record<string, string>> = {
-	"transform.positionX": "Position X",
-	"transform.positionY": "Position Y",
-	"transform.scaleX": "Scale X",
-	"transform.scaleY": "Scale Y",
-	"transform.rotate": "Rotation",
-	opacity: "Opacity",
-	volume: "Volume",
-	color: "Color",
-	"background.color": "BG Color",
-	"background.paddingX": "BG Pad X",
-	"background.paddingY": "BG Pad Y",
-	"background.offsetX": "BG Offset X",
-	"background.offsetY": "BG Offset Y",
-	"background.cornerRadius": "Corner Radius",
-};
-
 export function getPropertyLabel(path: AnimationPath): string {
-	if (PROPERTY_LABELS[path]) return PROPERTY_LABELS[path];
-	if (path.startsWith("params.")) return path.slice("params.".length);
+	const { timelineT, editorT } = getCurrentI18n();
+	const timelinePropertyLabels = timelineT.properties as Record<string, string>;
+	const localizedTimelineLabel = timelinePropertyLabels[path];
+	if (localizedTimelineLabel) return localizedTimelineLabel;
+
+	if (path.startsWith("params.")) {
+		const paramPath = path.slice("params.".length);
+		const editorParamLabels = editorT.properties.paramLabels as Record<
+			string,
+			string
+		>;
+		return editorParamLabels[paramPath] ?? paramPath;
+	}
 	if (path.startsWith("effects.")) {
 		const parts = path.split(".");
 		return parts[parts.length - 1];
