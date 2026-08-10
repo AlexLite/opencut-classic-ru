@@ -20,16 +20,19 @@ import type {
 } from "@/selection/types";
 import { useBoxSelect } from "@/selection/hooks/use-box-select";
 import { cn } from "@/utils/ui";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function SelectableSurface({
 	orderedIds,
 	children,
 	className,
-	ariaLabel = "Selectable items",
+	ariaLabel,
 	revealId = null,
 	onRevealComplete,
 	onSelectionChange,
 }: SelectableSurfaceProps) {
+	const { uiT } = useI18n();
+	const resolvedAriaLabel = ariaLabel ?? uiT.selection.selectableItems;
 	const [selectionState, setSelectionState] = useState<SelectionState>(() =>
 		clearSelection(),
 	);
@@ -269,7 +272,7 @@ export function SelectableSurface({
 				ref={containerRef}
 				className={cn("relative min-h-full", className)}
 				role="listbox"
-				aria-label={ariaLabel}
+				aria-label={resolvedAriaLabel}
 				aria-multiselectable="true"
 				tabIndex={0}
 				onMouseDown={handleMouseDown}
