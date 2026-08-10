@@ -142,6 +142,15 @@ export const editorEn = {
 			"remove-media-assets": "Remove media assets",
 		},
 	},
+	feedback: {
+		sendFeedback: "Send feedback",
+		placeholder: "Thoughts, bugs, ideas...",
+		back: "Back",
+		cancel: "Cancel",
+		send: "Send",
+		sent: "Feedback sent",
+		failed: "Failed to send feedback",
+	},
 	media: {
 		title: "Assets",
 		noActiveProject: "No active project",
