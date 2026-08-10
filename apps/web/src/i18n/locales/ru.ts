@@ -32,6 +32,7 @@ export const ru = {
 		allProjects: "Все проекты",
 		newProject: "Новый проект",
 		newProjectShort: "Новый",
+		untitledProject: "Проект без названия",
 		gridView: "Плитка",
 		listView: "Список",
 		created: "Создан",
@@ -94,6 +95,12 @@ export const ru = {
 			renameFailed: "Не удалось переименовать проект",
 			deleteFailed: "Не удалось удалить проект",
 			projectThumbnailAlt: "Миниатюра проекта",
+		},
+		runtime: {
+			loadingProject: "Загрузка проекта...",
+			exitingProject: "Выход из проекта...",
+			loadFailed: "Не удалось загрузить проект",
+			createFailed: "Не удалось создать проект",
 		},
 		chromeRecommendation: {
 			message: "Для лучшей работы откройте OpenCut в Chrome.",
