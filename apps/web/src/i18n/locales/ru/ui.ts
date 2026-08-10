@@ -24,4 +24,19 @@ export const uiRu = {
 		opacity: "Прозрачность",
 		open: "Открыть выбор цвета",
 	},
+	breadcrumb: {
+		label: "Навигационная цепочка",
+		more: "Ещё",
+	},
+	section: {
+		collapse: "Свернуть раздел",
+		expand: "Развернуть раздел",
+	},
+	editableTimecode: {
+		clickToEdit: "Нажмите, чтобы изменить время",
+	},
+	storage: {
+		unsupportedWarning:
+			"Браузер поддерживает локальное хранилище не полностью. Некоторые функции могут работать некорректно.",
+	},
 } satisfies TranslationShape<typeof uiEn>;
