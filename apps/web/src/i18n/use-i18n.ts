@@ -9,6 +9,7 @@ import { previewEn } from "./locales/en/preview";
 import { changelogEn } from "./locales/en/changelog";
 import { siteEn } from "./locales/en/site";
 import { legalEn } from "./locales/en/legal";
+import { uiEn } from "./locales/en/ui";
 import { useLocaleStore } from "./store";
 import {
 	assetDictionaries,
@@ -20,6 +21,7 @@ import {
 	previewDictionaries,
 	siteDictionaries,
 	timelineDictionaries,
+	uiDictionaries,
 } from "./runtime";
 
 type PluralForms = {
@@ -40,6 +42,7 @@ export function useI18n() {
 	const changelogT = changelogDictionaries[locale] ?? changelogEn;
 	const siteT = siteDictionaries[locale] ?? siteEn;
 	const legalT = legalDictionaries[locale] ?? legalEn;
+	const uiT = uiDictionaries[locale] ?? uiEn;
 	const intlLocale = intlLocales[locale] ?? intlLocales.en;
 	const pluralRules = new Intl.PluralRules(intlLocale);
 
@@ -76,6 +79,7 @@ export function useI18n() {
 		changelogT,
 		siteT,
 		legalT,
+		uiT,
 		intlLocale,
 		formatDate,
 		formatNumber,
