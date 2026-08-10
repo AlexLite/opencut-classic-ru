@@ -7,6 +7,7 @@ import {
 	getPlatformAlternateKey,
 	getPlatformSpecialKey,
 } from "@/utils/platform";
+import { useI18n } from "@/i18n/use-i18n";
 
 export interface KeyboardShortcut {
 	id: string;
@@ -17,36 +18,55 @@ export interface KeyboardShortcut {
 	icon?: React.ReactNode;
 }
 
-function formatKey({ key }: { key: string }): string {
+type ShortcutKeyLabels = {
+	shift: string;
+	space: string;
+	home: string;
+	enter: string;
+	end: string;
+	delete: string;
+	backspace: string;
+};
+
+function formatKey({
+	key,
+	labels,
+}: {
+	key: string;
+	labels: ShortcutKeyLabels;
+}): string {
 	return key
 		.replace("ctrl", getPlatformSpecialKey())
 		.replace("alt", getPlatformAlternateKey())
-		.replace("shift", "Shift")
+		.replace("shift", labels.shift)
 		.replace("left", "←")
 		.replace("right", "→")
 		.replace("up", "↑")
 		.replace("down", "↓")
-		.replace("space", "Space")
-		.replace("home", "Home")
-		.replace("enter", "Enter")
-		.replace("end", "End")
-		.replace("delete", "Delete")
-		.replace("backspace", "Backspace")
+		.replace("space", labels.space)
+		.replace("home", labels.home)
+		.replace("enter", labels.enter)
+		.replace("end", labels.end)
+		.replace("delete", labels.delete)
+		.replace("backspace", labels.backspace)
 		.replace("-", "+");
 }
 
 export function useKeyboardShortcutsHelp() {
 	const { keybindings } = useKeybindingsStore();
+	const { editorT } = useI18n();
+	const keyLabels = editorT.shortcuts.keyLabels;
 
 	const shortcuts = useMemo(() => {
 		const actionToKeys = new Map<TActionWithOptionalArgs, string[]>();
 
 		for (const [key, action] of keybindings) {
 			const existing = actionToKeys.get(action);
+			const formattedKey = formatKey({ key, labels: keyLabels });
 			if (existing) {
-				existing.push(formatKey({ key }));
+				existing.push(formattedKey);
 			} else {
-				actionToKeys.set(action, [formatKey({ key })]);
+				actionToKeys.set(action, [formattedKey]);
 			}
 		}
 
@@ -69,7 +89,7 @@ export function useKeyboardShortcutsHelp() {
 			}
 			return a.description.localeCompare(b.description);
 		});
-	}, [keybindings]);
+	}, [keybindings, keyLabels]);
 
 	return {
 		shortcuts,
