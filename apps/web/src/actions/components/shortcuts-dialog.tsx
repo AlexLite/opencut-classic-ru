@@ -16,6 +16,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function ShortcutsDialog({
 	isOpen,
@@ -26,6 +27,7 @@ export function ShortcutsDialog({
 }) {
 	const [recordingShortcut, setRecordingShortcut] =
 		useState<KeyboardShortcut | null>(null);
+	const { editorT } = useI18n();
 
 	const {
 		updateKeybinding,
@@ -56,8 +58,12 @@ export function ShortcutsDialog({
 					action: recordingShortcut.action,
 				});
 				if (conflict) {
+					const actionLabel =
+						editorT.shortcuts.actions[
+							conflict.existingAction as keyof typeof editorT.shortcuts.actions
+						] ?? conflict.existingAction;
 					toast.error(
-						`Key "${keyString}" is already bound to "${conflict.existingAction}"`,
+						`${editorT.shortcuts.conflictKeyPrefix} "${keyString}" ${editorT.shortcuts.conflictBoundTo} "${actionLabel}"`,
 					);
 					setRecordingShortcut(null);
 					return;
@@ -99,6 +105,7 @@ export function ShortcutsDialog({
 		getKeybindingsForAction,
 		setIsRecording,
 		isRecording,
+		editorT,
 	]);
 
 	const handleStartRecording = (shortcut: KeyboardShortcut) => {
@@ -110,37 +117,45 @@ export function ShortcutsDialog({
 		<Dialog open={isOpen} onOpenChange={onOpenChange}>
 			<DialogContent className="flex max-h-[80vh] max-w-2xl flex-col p-0">
 				<DialogHeader>
-					<DialogTitle>Keyboard shortcuts</DialogTitle>
+					<DialogTitle>{editorT.shortcuts.title}</DialogTitle>
 				</DialogHeader>
 
 				<DialogBody className="scrollbar-thin grow overflow-y-auto">
 					<div className="flex flex-col gap-6">
-						{categories.map((category) => (
-							<div key={category} className="flex flex-col gap-1">
-								<h3 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-									{category}
-								</h3>
-								<div className="flex flex-col gap-1">
-									{shortcuts
-										.filter((shortcut) => shortcut.category === category)
-										.map((shortcut) => (
-											<ShortcutItem
-												key={shortcut.action}
-												shortcut={shortcut}
-												isRecording={
-													shortcut.action === recordingShortcut?.action
-												}
-												onStartRecording={() => handleStartRecording(shortcut)}
-											/>
-										))}
+						{categories.map((category) => {
+							const categoryLabel =
+								editorT.shortcuts.categories[
+									category as keyof typeof editorT.shortcuts.categories
+								] ?? category;
+							return (
+								<div key={category} className="flex flex-col gap-1">
+									<h3 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+										{categoryLabel}
+									</h3>
+									<div className="flex flex-col gap-1">
+										{shortcuts
+											.filter((shortcut) => shortcut.category === category)
+											.map((shortcut) => (
+												<ShortcutItem
+													key={shortcut.action}
+													shortcut={shortcut}
+													isRecording={
+														shortcut.action === recordingShortcut?.action
+													}
+													onStartRecording={() =>
+														handleStartRecording(shortcut)
+													}
+												/>
+											))}
+									</div>
 								</div>
-							</div>
-						))}
+							);
+						})}
 					</div>
 				</DialogBody>
 				<DialogFooter>
 					<Button variant="destructive" onClick={resetToDefaults}>
-						Reset to default
+						{editorT.shortcuts.resetToDefault}
 					</Button>
 				</DialogFooter>
 			</DialogContent>
@@ -155,8 +170,9 @@ function ShortcutItem({
 }: {
 	shortcut: KeyboardShortcut;
 	isRecording: boolean;
-	onStartRecording: (params: { shortcut: KeyboardShortcut }) => void;
+	onStartRecording: () => void;
 }) {
+	const { editorT } = useI18n();
 	const displayKeys = shortcut.keys.filter((key: string) => {
 		if (
 			key.includes("Cmd") &&
@@ -166,6 +182,10 @@ function ShortcutItem({
 
 		return true;
 	});
+	const description =
+		editorT.shortcuts.actions[
+			shortcut.action as keyof typeof editorT.shortcuts.actions
+		] ?? shortcut.description;
 
 	return (
 		<div className="flex items-center justify-between">
@@ -173,7 +193,7 @@ function ShortcutItem({
 				{shortcut.icon && (
 					<div className="text-muted-foreground">{shortcut.icon}</div>
 				)}
-				<span className="text-sm">{shortcut.description}</span>
+				<span className="text-sm">{description}</span>
 			</div>
 			<div className="flex items-center gap-2">
 				{displayKeys.map((key: string, index: number) => (
@@ -185,7 +205,7 @@ function ShortcutItem({
 									<EditableShortcutKey
 										key={keyId}
 										isRecording={isRecording}
-										onStartRecording={() => onStartRecording({ shortcut })}
+										onStartRecording={onStartRecording}
 									>
 										{keyPart}
 									</EditableShortcutKey>
@@ -193,7 +213,9 @@ function ShortcutItem({
 							})}
 						</div>
 						{index < displayKeys.length - 1 && (
-							<span className="text-muted-foreground text-xs">or</span>
+							<span className="text-muted-foreground text-xs">
+								{editorT.shortcuts.or}
+							</span>
 						)}
 					</div>
 				))}
@@ -211,6 +233,7 @@ function EditableShortcutKey({
 	isRecording: boolean;
 	onStartRecording: () => void;
 }) {
+	const { editorT } = useI18n();
 	const handleClick = (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -223,7 +246,9 @@ function EditableShortcutKey({
 			size="sm"
 			onClick={handleClick}
 			title={
-				isRecording ? "Press any key combination..." : "Click to edit shortcut"
+				isRecording
+					? editorT.shortcuts.pressCombination
+					: editorT.shortcuts.clickToEdit
 			}
 		>
 			{children}
