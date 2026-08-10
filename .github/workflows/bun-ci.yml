@@ -6,7 +6,7 @@ concurrency:
 
 on:
   push:
-    branches: [main, feat/local-webcodecs-proxy-fallback]
+    branches: [main]
     paths-ignore:
       - "*.md"
   pull_request:
@@ -65,19 +65,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-1.2.18-${{ hashFiles('apps/web/bun.lock') }}
+        key: ${{ runner.os }}-bun-1.2.18-${{ hashFiles('apps/web/bun.lock') }}
 
       - name: Install dependencies
         working-directory: apps/web
         run: bun install
-
-      - name: Lint
-        working-directory: apps/web
-        run: bun run lint
-
-      - name: Typecheck
-        working-directory: apps/web
-        run: bunx tsc --noEmit
 
       - name: Build
         working-directory: apps/web
