@@ -10,6 +10,7 @@ import { changelogEn } from "./locales/en/changelog";
 import { siteEn } from "./locales/en/site";
 import { legalEn } from "./locales/en/legal";
 import { uiEn } from "./locales/en/ui";
+import { propertiesEn } from "./locales/en/properties";
 import { useLocaleStore } from "./store";
 import {
 	assetDictionaries,
@@ -19,6 +20,7 @@ import {
 	intlLocales,
 	legalDictionaries,
 	previewDictionaries,
+	propertyPanelDictionaries,
 	siteDictionaries,
 	timelineDictionaries,
 	uiDictionaries,
@@ -43,6 +45,7 @@ export function useI18n() {
 	const siteT = siteDictionaries[locale] ?? siteEn;
 	const legalT = legalDictionaries[locale] ?? legalEn;
 	const uiT = uiDictionaries[locale] ?? uiEn;
+	const propertiesT = propertyPanelDictionaries[locale] ?? propertiesEn;
 	const intlLocale = intlLocales[locale] ?? intlLocales.en;
 	const pluralRules = new Intl.PluralRules(intlLocale);
 
@@ -80,6 +83,7 @@ export function useI18n() {
 		siteT,
 		legalT,
 		uiT,
+		propertiesT,
 		intlLocale,
 		formatDate,
 		formatNumber,
