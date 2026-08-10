@@ -29,6 +29,18 @@ export const timelineRu = {
 		mute: "Выключить звук дорожки",
 		unmute: "Включить звук дорожки",
 	},
+	bookmarks: {
+		ruler: "Линейка таймлайна",
+		bookmarkAt: "Закладка на отметке",
+		secondsShort: "с",
+		note: "Заметка",
+		addNote: "Добавить заметку...",
+		color: "Цвет",
+		resetColor: "Сбросить цвет",
+		duration: "Длительность",
+		delete: "Удалить",
+		deleteBookmark: "Удалить закладку",
+	},
 	properties: {
 		"transform.positionX": "Положение X",
 		"transform.positionY": "Положение Y",
