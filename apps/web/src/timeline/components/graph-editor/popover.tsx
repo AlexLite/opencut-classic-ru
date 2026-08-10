@@ -21,6 +21,7 @@ import {
 } from "./easing-presets";
 import { removePreset, savePreset, useCustomPresets } from "./custom-presets-store";
 import { BezierGraph, BEZIER_GRAPH_MIN_HEIGHT } from "./bezier-graph";
+import { useI18n } from "@/i18n/use-i18n";
 
 const COLLAPSED_MAX = 6;
 const THUMB_SEGMENTS = 24;
@@ -60,8 +61,11 @@ export function GraphEditorPopover({
 }) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const custom = useCustomPresets();
+	const { timelineT } = useI18n();
 	const allPresets = [...BUILTIN_PRESETS, ...custom];
 	const canEdit = value !== null;
+	const builtinPresetLabels: Record<string, string> =
+		timelineT.graphEditor.presetsById;
 	const activePresetId =
 		value == null
 			? null
@@ -103,7 +107,9 @@ export function GraphEditorPopover({
 											: "text-muted-foreground hover:text-foreground",
 									)}
 								>
-									{component.label}
+									{component.key === "value"
+										? timelineT.graphEditor.components.value
+										: component.label}
 								</button>
 							))}
 						</div>
@@ -126,10 +132,10 @@ export function GraphEditorPopover({
 				<Tabs variant="underline" defaultValue="presets" className="flex flex-col gap-2">
 					<TabsList className="px-3">
 						<TabsTrigger value="presets" className="text-xs">
-							Presets
+							{timelineT.graphEditor.presets}
 						</TabsTrigger>
 						<TabsTrigger value="saved" className="text-xs">
-							Saved
+							{timelineT.graphEditor.saved}
 						</TabsTrigger>
 					</TabsList>
 					<TabsContent value="presets" className="px-3 pb-0">
@@ -137,11 +143,15 @@ export function GraphEditorPopover({
 							isExpanded={isExpanded}
 							shouldExpand={BUILTIN_PRESETS.length > COLLAPSED_MAX}
 							onExpand={() => setIsExpanded(true)}
+							showMoreLabel={timelineT.graphEditor.showMorePresets}
 						>
 							{BUILTIN_PRESETS.map((preset) => (
 								<PresetItem
 									key={preset.id}
 									preset={preset}
+									displayLabel={builtinPresetLabels[preset.id] ?? preset.label}
+									previewLabel={timelineT.graphEditor.curvePresetPreview}
+									deleteLabel={timelineT.graphEditor.deleteSavedPreset}
 									isActive={activePresetId === preset.id}
 									disabled={!canEdit}
 									onSelect={() => onCommitValue?.(preset.value)}
@@ -151,10 +161,13 @@ export function GraphEditorPopover({
 					</TabsContent>
 					<TabsContent value="saved" className="px-3">
 						<div className="grid grid-cols-3 gap-1">
-							{custom.map((preset) => (
+							{custom.map((preset, index) => (
 								<PresetItem
 									key={preset.id}
 									preset={preset}
+									displayLabel={`${timelineT.graphEditor.customPresetPrefix} ${index + 1}`}
+									previewLabel={timelineT.graphEditor.curvePresetPreview}
+									deleteLabel={timelineT.graphEditor.deleteSavedPreset}
 									isActive={activePresetId === preset.id}
 									disabled={!canEdit}
 									onSelect={() => onCommitValue?.(preset.value)}
@@ -178,7 +191,9 @@ export function GraphEditorPopover({
 										className="size-3.5 opacity-40"
 									/>
 								</div>
-								<span className="text-[10px] leading-tight">Save</span>
+								<span className="text-[10px] leading-tight">
+									{timelineT.graphEditor.save}
+								</span>
 							</button>
 						</div>
 					</TabsContent>
@@ -204,11 +219,13 @@ function ExpandableGrid({
 	isExpanded,
 	shouldExpand,
 	onExpand,
+	showMoreLabel,
 }: {
 	children: React.ReactNode;
 	isExpanded: boolean;
 	shouldExpand: boolean;
 	onExpand: () => void;
+	showMoreLabel: string;
 }) {
 	const gridStyle = shouldExpand
 		? isExpanded
@@ -228,6 +245,8 @@ function ExpandableGrid({
 						size="icon"
 						className="size-5"
 						onClick={onExpand}
+						aria-label={showMoreLabel}
+						title={showMoreLabel}
 					>
 						<HugeiconsIcon
 							icon={ArrowDown01Icon}
@@ -242,12 +261,18 @@ function ExpandableGrid({
 
 function PresetItem({
 	preset,
+	displayLabel,
+	previewLabel,
+	deleteLabel,
 	isActive,
 	onSelect,
 	onDelete,
 	disabled,
 }: {
 	preset: EasingPreset;
+	displayLabel: string;
+	previewLabel: string;
+	deleteLabel: string;
 	isActive: boolean;
 	onSelect: () => void;
 	onDelete?: () => void;
@@ -272,7 +297,7 @@ function PresetItem({
 					isActive && "bg-primary/5!",
 				)}
 			>
-				<CurveThumb value={preset.value} />
+				<CurveThumb value={preset.value} title={previewLabel} />
 			</div>
 			<span
 				className={cn(
@@ -280,7 +305,7 @@ function PresetItem({
 					isActive ? "text-primary" : "text-muted-foreground",
 				)}
 			>
-				{preset.label}
+				{displayLabel}
 			</span>
 			{onDelete && (
 				<Button
@@ -291,6 +316,8 @@ function PresetItem({
 						event.stopPropagation();
 						onDelete();
 					}}
+					aria-label={deleteLabel}
+					title={deleteLabel}
 				>
 					<HugeiconsIcon icon={Delete02Icon} />
 				</Button>
@@ -307,7 +334,13 @@ function toThumbY({ value }: { value: number }) {
 	return THUMB_PADDING_Y + (1 - value) * (THUMB_HEIGHT - THUMB_PADDING_Y * 2);
 }
 
-function CurveThumb({ value }: { value: NormalizedCubicBezier }) {
+function CurveThumb({
+	value,
+	title,
+}: {
+	value: NormalizedCubicBezier;
+	title: string;
+}) {
 	const points: string[] = [];
 	for (let i = 0; i <= THUMB_SEGMENTS; i++) {
 		const progress = i / THUMB_SEGMENTS;
@@ -321,7 +354,7 @@ function CurveThumb({ value }: { value: NormalizedCubicBezier }) {
 			height={THUMB_HEIGHT}
 			viewBox={`0 0 ${THUMB_WIDTH} ${THUMB_HEIGHT}`}
 		>
-			<title>Curve preset preview</title>
+			<title>{title}</title>
 			<path
 				d={`M${points.join("L")}`}
 				fill="none"
