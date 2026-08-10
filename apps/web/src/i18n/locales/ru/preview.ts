@@ -16,6 +16,7 @@ export const previewRu = {
 	tryAgain: "Попробуйте ещё раз",
 	zoom: "Масштаб предпросмотра",
 	canvas: "Холст предпросмотра",
+	editText: "Редактировать текст",
 	overlays: {
 		bookmarkNotes: "Заметки закладок",
 		guides: "Направляющие",
