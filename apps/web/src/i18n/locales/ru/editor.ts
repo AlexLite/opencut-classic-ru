@@ -145,6 +145,15 @@ export const editorRu = {
 			"remove-media-assets": "Удалить медиафайлы",
 		},
 	},
+	feedback: {
+		sendFeedback: "Отправить отзыв",
+		placeholder: "Пожелания, ошибки, идеи...",
+		back: "Назад",
+		cancel: "Отмена",
+		send: "Отправить",
+		sent: "Отзыв отправлен",
+		failed: "Не удалось отправить отзыв",
+	},
 	media: {
 		title: "Материалы",
 		noActiveProject: "Нет активного проекта",
