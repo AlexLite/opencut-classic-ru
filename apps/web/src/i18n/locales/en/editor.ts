@@ -72,6 +72,7 @@ export const editorEn = {
 	},
 	scenes: {
 		title: "Scenes",
+		mainScene: "Main scene",
 		selectScenes: "Select scenes",
 		selectToDelete: "Select scenes to delete",
 		switchDescription: "Switch between scenes in your project",
