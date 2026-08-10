@@ -17,6 +17,9 @@ export const ru = {
 		selectAll: "Выбрать все",
 		tryAgain: "Попробуйте ещё раз",
 		unknownError: "Произошла неизвестная ошибка",
+		loading: "Загрузка",
+		lightMode: "Светлая тема",
+		darkMode: "Тёмная тема",
 	},
 	language: {
 		label: "Язык",
