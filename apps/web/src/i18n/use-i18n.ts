@@ -63,7 +63,7 @@ export function useI18n() {
 		options?: Intl.NumberFormatOptions,
 	) => new Intl.NumberFormat(intlLocale, options).format(value);
 
-	const plural = (count: number, forms: PluralForms) => {
+	const plural = (count: number, forms: Readonly<PluralForms>) => {
 		const category = pluralRules.select(count);
 		if (category === "one" || category === "few" || category === "many") {
 			return forms[category];
