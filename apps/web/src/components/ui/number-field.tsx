@@ -4,6 +4,7 @@ import { cn } from "@/utils/ui";
 import { clamp } from "@/utils/math";
 import { useRef, useState, useLayoutEffect, type ComponentProps } from "react";
 import { useFocusLock } from "@/hooks/use-focus-lock";
+import { useI18n } from "@/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowTurnBackwardIcon } from "@hugeicons/core-free-icons";
@@ -77,7 +78,6 @@ function scrubAcrossRanges({
 
 	while (remainingPixels !== 0) {
 		const direction = Math.sign(remainingPixels);
-
 		const range = getActiveRange({ value: currentValue, direction, ranges });
 		if (!range) break;
 
@@ -134,6 +134,7 @@ function NumberField({
 	ref,
 	...props
 }: NumberFieldProps & { ref?: React.Ref<HTMLInputElement> }) {
+	const { t } = useI18n();
 	const iconRef = useRef<HTMLButtonElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const ghostRef = useRef<HTMLSpanElement>(null);
@@ -173,7 +174,6 @@ function NumberField({
 		iconRef.current?.requestPointerLock();
 
 		const handlePointerMove = (moveEvent: PointerEvent) => {
-			// first movementX after pointer lock often contains a bogus warp delta
 			if (!hasReceivedFirstMove) {
 				hasReceivedFirstMove = true;
 				return;
@@ -256,7 +256,7 @@ function NumberField({
 					<button
 						ref={iconRef}
 						type="button"
-						aria-label="Drag to adjust value"
+						aria-label={t.common.dragToAdjustValue}
 						disabled={disabled}
 						className="text-muted-foreground [&_svg]:size-3.5! shrink-0 select-none pl-2.5 text-sm leading-none cursor-ew-resize"
 						onMouseDown={(event) => event.preventDefault()}
@@ -279,7 +279,6 @@ function NumberField({
 				{inputNode}
 				{suffix && (
 					<>
-						{/* Ghost mirrors value text to measure width for suffix positioning */}
 						<span
 							ref={ghostRef}
 							className="invisible absolute text-sm leading-none whitespace-pre pointer-events-none"
@@ -304,7 +303,7 @@ function NumberField({
 					<Button
 						variant="text"
 						size="text"
-						aria-label="Reset to default"
+						aria-label={t.common.resetToDefault}
 						onClick={onReset}
 					>
 						<HugeiconsIcon icon={ArrowTurnBackwardIcon} className="size-3.5!" />
