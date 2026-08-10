@@ -37,14 +37,14 @@ async function isDecoderTypeSupportedIfAvailable({
 }: {
 	decoder: VideoDecoderConstructorWithTypeSupport;
 	codec: string;
-}): Promise<boolean> {
-	if (typeof decoder.isTypeSupported !== "function") return true;
+}): Promise<boolean | null> {
+	if (typeof decoder.isTypeSupported !== "function") return null;
 	try {
 		return await decoder.isTypeSupported(codec);
 	} catch {
 		// isTypeSupported() is non-standard and its accepted argument differs between
 		// implementations. isConfigSupported() remains the authoritative check.
-		return true;
+		return null;
 	}
 }
 
@@ -92,15 +92,10 @@ export async function checkVideoDecoderCapability({
 	}
 
 	const decoder = globalThis.VideoDecoder as VideoDecoderConstructorWithTypeSupport;
-	if (!(await isDecoderTypeSupportedIfAvailable({ decoder, codec: config.codec }))) {
-		return {
-			available: true,
-			supported: false,
-			hardwareAcceleration: null,
-			config: null,
-			reason: "type-unsupported",
-		};
-	}
+	const typeSupported = await isDecoderTypeSupportedIfAvailable({
+		decoder,
+		codec: config.codec,
+	});
 
 	const hardware = await checkDecoderConfig({
 		decoder,
@@ -137,7 +132,12 @@ export async function checkVideoDecoderCapability({
 		supported: false,
 		hardwareAcceleration: null,
 		config: fallback?.config ?? hardware?.config ?? null,
-		reason: hardware === null && fallback === null ? "invalid-config" : "config-unsupported",
+		reason:
+			hardware === null && fallback === null
+				? "invalid-config"
+				: typeSupported === false
+					? "type-unsupported"
+					: "config-unsupported",
 	};
 }
 
