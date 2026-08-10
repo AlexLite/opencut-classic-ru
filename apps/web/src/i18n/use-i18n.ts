@@ -4,12 +4,14 @@ import { useEffect } from "react";
 import { en } from "./locales/en";
 import { editorEn } from "./locales/en/editor";
 import { assetsEn } from "./locales/en/assets";
+import { timelineEn } from "./locales/en/timeline";
 import { useLocaleStore } from "./store";
 import {
 	assetDictionaries,
 	dictionaries,
 	editorDictionaries,
 	intlLocales,
+	timelineDictionaries,
 } from "./runtime";
 
 type PluralForms = {
@@ -25,6 +27,7 @@ export function useI18n() {
 	const t = dictionaries[locale] ?? en;
 	const editorT = editorDictionaries[locale] ?? editorEn;
 	const assetsT = assetDictionaries[locale] ?? assetsEn;
+	const timelineT = timelineDictionaries[locale] ?? timelineEn;
 	const intlLocale = intlLocales[locale] ?? intlLocales.en;
 	const pluralRules = new Intl.PluralRules(intlLocale);
 
@@ -56,6 +59,7 @@ export function useI18n() {
 		t,
 		editorT,
 		assetsT,
+		timelineT,
 		intlLocale,
 		formatDate,
 		formatNumber,
