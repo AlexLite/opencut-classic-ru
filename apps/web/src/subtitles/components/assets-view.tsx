@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { PanelView } from "@/components/editor/panels/assets/views/base-panel";
 import {
@@ -39,6 +41,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { DiagnosticSeverity } from "@/diagnostics/types";
+import { useI18n } from "@/i18n/use-i18n";
 
 const DIAGNOSTIC_BUTTON_VARIANT: Record<
 	DiagnosticSeverity,
@@ -90,6 +93,9 @@ export function Captions() {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const editor = useEditor();
+	const { locale, assetsT } = useI18n();
+	const captionsT = assetsT.captions;
+	const languageDisplayNames = new Intl.DisplayNames([locale], { type: "language" });
 
 	const isProcessing = processing.status === "processing";
 
@@ -97,14 +103,19 @@ export function Captions() {
 		e.diagnostics.getActive({ scope: TRANSCRIPTION_DIAGNOSTICS_SCOPE }),
 	);
 
+	const getDiagnosticMessage = ({ id, fallback }: { id: string; fallback: string }) => {
+		if (id === "transcription.no_audio") return captionsT.diagnostics.noAudio;
+		return fallback;
+	};
+
 	const handleProgress = (progress: TranscriptionProgress) => {
 		if (progress.status === "loading-model") {
 			dispatch({
 				type: "update_step",
-				step: `Loading model ${Math.round(progress.progress)}%`,
+				step: `${captionsT.steps.loadingModelPrefix}${Math.round(progress.progress)}%`,
 			});
 		} else if (progress.status === "transcribing") {
-			dispatch({ type: "update_step", step: "Transcribing..." });
+			dispatch({ type: "update_step", step: captionsT.steps.transcribing });
 		}
 	};
 
@@ -118,7 +129,7 @@ export function Captions() {
 	};
 
 	const handleGenerateTranscript = async () => {
-		dispatch({ type: "start", step: "Extracting audio..." });
+		dispatch({ type: "start", step: captionsT.steps.extractingAudio });
 		try {
 			const audioBlob = await extractTimelineAudio({
 				tracks: editor.scenes.getActiveScene().tracks,
@@ -126,7 +137,7 @@ export function Captions() {
 				totalDuration: editor.timeline.getTotalDuration(),
 			});
 
-			dispatch({ type: "update_step", step: "Preparing audio..." });
+			dispatch({ type: "update_step", step: captionsT.steps.preparingAudio });
 			const { samples } = await decodeAudioToFloat32({
 				audioBlob,
 				sampleRate: DEFAULT_TRANSCRIPTION_SAMPLE_RATE,
@@ -138,11 +149,11 @@ export function Captions() {
 				onProgress: handleProgress,
 			});
 
-			dispatch({ type: "update_step", step: "Generating captions..." });
+			dispatch({ type: "update_step", step: captionsT.steps.generatingCaptions });
 			const captionChunks = buildCaptionChunks({ segments: result.segments });
 
 			if (!insertCaptions({ captions: captionChunks })) {
-				dispatch({ type: "fail", error: "No captions were generated" });
+				dispatch({ type: "fail", error: captionsT.errors.noCaptions });
 				return;
 			}
 
@@ -151,10 +162,7 @@ export function Captions() {
 			console.error("Transcription failed:", error);
 			dispatch({
 				type: "fail",
-				error:
-					error instanceof Error
-						? error.message
-						: "An unexpected error occurred",
+				error: error instanceof Error ? error.message : captionsT.errors.unexpected,
 			});
 		}
 	};
@@ -164,7 +172,7 @@ export function Captions() {
 	};
 
 	const handleImportFile = async ({ file }: { file: File }) => {
-		dispatch({ type: "start", step: "Reading subtitle file..." });
+		dispatch({ type: "start", step: captionsT.steps.readingSubtitle });
 		try {
 			const input = await file.text();
 			const result = parseSubtitleFile({
@@ -175,35 +183,33 @@ export function Captions() {
 			if (result.captions.length === 0) {
 				dispatch({
 					type: "fail",
-					error: "No valid subtitle cues were found in the subtitle file",
+					error: captionsT.errors.noValidCues,
 				});
 				return;
 			}
 
-			dispatch({ type: "update_step", step: "Importing subtitles..." });
+			dispatch({ type: "update_step", step: captionsT.steps.importingSubtitles });
 
 			if (!insertCaptions({ captions: result.captions })) {
-				dispatch({ type: "fail", error: "No captions were generated" });
+				dispatch({ type: "fail", error: captionsT.errors.noCaptions });
 				return;
 			}
 
 			const nextWarnings = [...result.warnings];
 			if (result.skippedCueCount > 0) {
 				nextWarnings.unshift(
-					`Imported ${result.captions.length} subtitle cue(s) and skipped ${result.skippedCueCount} malformed cue(s).`,
+					`${captionsT.warnings.importedPrefix}${result.captions.length}${captionsT.warnings.importedMiddle}${result.skippedCueCount}${captionsT.warnings.importedSuffix}`,
 				);
 			}
 
 			dispatch({ type: "succeed", warnings: nextWarnings });
 		} catch (error) {
 			console.error("Subtitle import failed:", error);
-			dispatch({
-				type: "fail",
-				error:
-					error instanceof Error
-						? error.message
-						: "An unexpected error occurred",
-			});
+			const message =
+				error instanceof Error && error.message === "Unsupported subtitle format"
+					? captionsT.errors.unsupportedFormat
+					: captionsT.errors.unexpected;
+			dispatch({ type: "fail", error: message });
 		}
 	};
 
@@ -239,26 +245,32 @@ export function Captions() {
 
 	return (
 		<PanelView
-			title="Captions"
+			title={captionsT.title}
 			contentClassName="px-0 flex flex-col h-full"
 			actions={
 				<TooltipProvider>
 					<div className="flex items-center gap-1.5">
 						{!isProcessing &&
-							activeDiagnostics.map((diagnostic) => (
-								<Tooltip key={diagnostic.id}>
-									<TooltipTrigger asChild>
-										<Button
-											variant={DIAGNOSTIC_BUTTON_VARIANT[diagnostic.severity]}
-											size="icon"
-											aria-label={diagnostic.message}
-										>
-											<HugeiconsIcon icon={AlertCircleIcon} size={16} />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>{diagnostic.message}</TooltipContent>
-								</Tooltip>
-							))}
+							activeDiagnostics.map((diagnostic) => {
+								const diagnosticMessage = getDiagnosticMessage({
+									id: diagnostic.id,
+									fallback: diagnostic.message,
+								});
+								return (
+									<Tooltip key={diagnostic.id}>
+										<TooltipTrigger asChild>
+											<Button
+												variant={DIAGNOSTIC_BUTTON_VARIANT[diagnostic.severity]}
+												size="icon"
+												aria-label={diagnosticMessage}
+											>
+												<HugeiconsIcon icon={AlertCircleIcon} size={16} />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>{diagnosticMessage}</TooltipContent>
+									</Tooltip>
+								);
+							})}
 						<Button
 							type="button"
 							variant="outline"
@@ -268,7 +280,7 @@ export function Captions() {
 							className="items-center justify-center gap-1.5"
 						>
 							<HugeiconsIcon icon={CloudUploadIcon} />
-							Import
+							{captionsT.import}
 						</Button>
 					</div>
 				</TooltipProvider>
@@ -289,19 +301,19 @@ export function Captions() {
 			>
 				<SectionContent className="flex flex-col gap-4 h-full pt-1">
 					<SectionFields>
-						<SectionField label="Language">
+						<SectionField label={captionsT.language}>
 							<Select
 								value={selectedLanguage}
 								onValueChange={(value) => handleLanguageChange({ value })}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder="Select a language" />
+									<SelectValue placeholder={captionsT.selectLanguage} />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="auto">Auto detect</SelectItem>
+									<SelectItem value="auto">{captionsT.autoDetect}</SelectItem>
 									{TRANSCRIPTION_LANGUAGES.map((language) => (
 										<SelectItem key={language.code} value={language.code}>
-											{language.name}
+											{languageDisplayNames.of(language.code) ?? language.name}
 										</SelectItem>
 									))}
 								</SelectContent>
@@ -316,7 +328,7 @@ export function Captions() {
 						disabled={isProcessing || activeDiagnostics.length > 0}
 					>
 						{isProcessing && <Spinner className="mr-1" />}
-						{isProcessing ? processing.step : "Generate transcript"}
+						{isProcessing ? processing.step : captionsT.generateTranscript}
 					</Button>
 					{error && (
 						<div className="bg-destructive/10 border-destructive/20 rounded-md border p-3">
