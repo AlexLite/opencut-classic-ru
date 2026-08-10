@@ -12,6 +12,7 @@ export const previewEn = {
 	failedToCopySnapshot: "Failed to copy snapshot",
 	tryAgain: "Please try again",
 	zoom: "Preview zoom",
+	canvas: "Preview canvas",
 	overlays: {
 		bookmarkNotes: "Bookmark notes",
 		guides: "Guides",
