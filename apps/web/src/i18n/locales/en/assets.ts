@@ -73,4 +73,35 @@ export const assetsEn = {
 			diamond: "Diamond",
 		},
 	},
+	captions: {
+		title: "Captions",
+		import: "Import",
+		language: "Language",
+		selectLanguage: "Select a language",
+		autoDetect: "Auto detect",
+		generateTranscript: "Generate transcript",
+		steps: {
+			loadingModelPrefix: "Loading model ",
+			transcribing: "Transcribing...",
+			extractingAudio: "Extracting audio...",
+			preparingAudio: "Preparing audio...",
+			generatingCaptions: "Generating captions...",
+			readingSubtitle: "Reading subtitle file...",
+			importingSubtitles: "Importing subtitles...",
+		},
+		errors: {
+			noCaptions: "No captions were generated",
+			unexpected: "An unexpected error occurred",
+			noValidCues: "No valid subtitle cues were found in the subtitle file",
+			unsupportedFormat: "Unsupported subtitle format",
+		},
+		warnings: {
+			importedPrefix: "Imported ",
+			importedMiddle: " subtitle cue(s) and skipped ",
+			importedSuffix: " malformed cue(s).",
+		},
+		diagnostics: {
+			noAudio: "No audio detected. Add a clip with audio to the timeline first.",
+		},
+	},
 } as const;
