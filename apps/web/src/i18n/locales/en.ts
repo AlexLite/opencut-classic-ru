@@ -14,6 +14,9 @@ export const en = {
 		selectAll: "Select all",
 		tryAgain: "Please try again",
 		unknownError: "Unknown error occurred",
+		loading: "Loading",
+		lightMode: "Light mode",
+		darkMode: "Dark mode",
 	},
 	language: {
 		label: "Language",
