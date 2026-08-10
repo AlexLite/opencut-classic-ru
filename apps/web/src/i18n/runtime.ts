@@ -12,6 +12,8 @@ import { changelogEn } from "./locales/en/changelog";
 import { changelogRu } from "./locales/ru/changelog";
 import { siteEn } from "./locales/en/site";
 import { siteRu } from "./locales/ru/site";
+import { legalEn } from "./locales/en/legal";
+import { legalRu } from "./locales/ru/legal";
 import { useLocaleStore } from "./store";
 import type { Locale, TranslationShape } from "./types";
 
@@ -68,6 +70,14 @@ export const siteDictionaries: Record<
 	ru: siteRu,
 };
 
+export const legalDictionaries: Record<
+	Locale,
+	TranslationShape<typeof legalEn>
+> = {
+	en: legalEn,
+	ru: legalRu,
+};
+
 export const intlLocales: Record<Locale, string> = {
 	en: "en-US",
 	ru: "ru-RU",
@@ -84,6 +94,7 @@ export function getCurrentI18n() {
 		previewT: previewDictionaries[locale] ?? previewEn,
 		changelogT: changelogDictionaries[locale] ?? changelogEn,
 		siteT: siteDictionaries[locale] ?? siteEn,
+		legalT: legalDictionaries[locale] ?? legalEn,
 		intlLocale: intlLocales[locale] ?? intlLocales.en,
 	};
 }
