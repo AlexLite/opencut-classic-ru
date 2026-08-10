@@ -26,6 +26,9 @@ export const uiEn = {
 		showPassword: "Show password",
 		hidePassword: "Hide password",
 	},
+	selection: {
+		selectableItems: "Selectable items",
+	},
 	breadcrumb: {
 		label: "Breadcrumb",
 		more: "More",
