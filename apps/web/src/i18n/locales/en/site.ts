@@ -8,6 +8,7 @@ export const siteEn = {
 		downloadSvg: "Download SVG",
 		brandAssets: "Brand assets",
 		projects: "Projects",
+		openMenu: "Open menu",
 		closeMenu: "Close menu",
 		logoAlt: "OpenCut logo",
 	},
