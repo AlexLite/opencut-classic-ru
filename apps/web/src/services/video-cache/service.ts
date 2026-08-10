@@ -5,6 +5,7 @@ import {
 	CanvasSink,
 	type WrappedCanvas,
 } from "mediabunny";
+import { checkVideoDecoderCapability } from "@/media/webcodecs-capabilities";
 
 interface VideoSinkData {
 	input: Input;
@@ -273,16 +274,19 @@ export class VideoCache {
 				throw new Error("No video track found");
 			}
 
-			const canDecode = await videoTrack.canDecode();
-			if (!canDecode) {
-				throw new Error("Video codec not supported for decoding");
+			const decoderConfig = await videoTrack.getDecoderConfig();
+			const decoderCapability = await checkVideoDecoderCapability({
+				config: decoderConfig,
+			});
+			if (!decoderCapability.supported || !decoderCapability.hardwareAcceleration) {
+				throw new Error("Video stream not supported for WebCodecs decoding");
 			}
 
 			const sink = new CanvasSink(videoTrack, {
 				poolSize: 3,
 				fit: "contain",
 				decoderOptions: {
-					hardwareAcceleration: "prefer-hardware",
+					hardwareAcceleration: decoderCapability.hardwareAcceleration,
 				},
 			});
 
