@@ -112,11 +112,16 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 		if (!encoderCapability.available) {
 			throw new Error("WebCodecs VideoEncoder is unavailable in this browser");
 		}
+		if (!encoderCapability.supported || !encoderCapability.hardwareAcceleration) {
+			throw new Error(
+				`WebCodecs VideoEncoder does not support ${webCodecsConfig.codec} at ${this.width}x${this.height}`,
+			);
+		}
 
 		const videoSource = new CanvasSource(this.renderer.getOutputCanvas(), {
 			codec,
 			bitrate: qualityMap[this.quality],
-			hardwareAcceleration: "prefer-hardware",
+			hardwareAcceleration: encoderCapability.hardwareAcceleration,
 		});
 
 		output.addVideoTrack(videoSource, { frameRate: fpsFloat });
