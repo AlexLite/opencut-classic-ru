@@ -141,7 +141,9 @@ export class MediaManager {
 		ids: string[];
 	}): void {
 		const uniqueIds = [...new Set(ids)];
-		if (uniqueIds.length === 0) return;
+		if (uniqueIds.length === 0) {
+			return;
+		}
 
 		const command =
 			uniqueIds.length === 1
@@ -166,7 +168,9 @@ export class MediaManager {
 		this.notify();
 
 		try {
-			const mediaAssets = await storageService.loadAllMediaAssets({ projectId });
+			const mediaAssets = await storageService.loadAllMediaAssets({
+				projectId,
+			});
 			this.assets = await Promise.all(
 				mediaAssets.map(async (asset) => {
 					if (asset.type !== "video") return asset;
@@ -192,9 +196,15 @@ export class MediaManager {
 		waveformCache.clearAll();
 
 		this.assets.forEach((asset) => {
-			if (asset.url) URL.revokeObjectURL(asset.url);
-			if (asset.previewUrl) URL.revokeObjectURL(asset.previewUrl);
-			if (asset.thumbnailUrl) URL.revokeObjectURL(asset.thumbnailUrl);
+			if (asset.url) {
+				URL.revokeObjectURL(asset.url);
+			}
+			if (asset.previewUrl) {
+				URL.revokeObjectURL(asset.previewUrl);
+			}
+			if (asset.thumbnailUrl) {
+				URL.revokeObjectURL(asset.thumbnailUrl);
+			}
 		});
 
 		const mediaIds = this.assets.map((asset) => asset.id);
@@ -203,7 +213,9 @@ export class MediaManager {
 
 		try {
 			await Promise.all(
-				mediaIds.map((id) => storageService.deleteMediaAsset({ projectId, id })),
+				mediaIds.map((id) =>
+					storageService.deleteMediaAsset({ projectId, id }),
+				),
 			);
 		} catch (error) {
 			console.error("Failed to clear media assets from storage:", error);
@@ -215,9 +227,15 @@ export class MediaManager {
 		waveformCache.clearAll();
 
 		this.assets.forEach((asset) => {
-			if (asset.url) URL.revokeObjectURL(asset.url);
-			if (asset.previewUrl) URL.revokeObjectURL(asset.previewUrl);
-			if (asset.thumbnailUrl) URL.revokeObjectURL(asset.thumbnailUrl);
+			if (asset.url) {
+				URL.revokeObjectURL(asset.url);
+			}
+			if (asset.previewUrl) {
+				URL.revokeObjectURL(asset.previewUrl);
+			}
+			if (asset.thumbnailUrl) {
+				URL.revokeObjectURL(asset.thumbnailUrl);
+			}
 		});
 
 		this.assets = [];
