@@ -3,6 +3,16 @@ import type { TranslationShape } from "../../types";
 
 export const timelineRu = {
 	ariaLabel: "Таймлайн",
+	accessibility: {
+		playhead: "Курсор таймлайна",
+		dragPlayhead: "Перетащить курсор таймлайна",
+		ruler: "Линейка таймлайна",
+		selectTrack: "Выбрать дорожку",
+		leftResizeHandle: "Левая граница изменения размера",
+		rightResizeHandle: "Правая граница изменения размера",
+		selectKeyframe: "Выбрать ключевой кадр",
+		effects: "Открыть эффекты",
+	},
 	toolbar: {
 		split: "Разделить элемент",
 		splitLeft: "Обрезать слева",
@@ -28,6 +38,28 @@ export const timelineRu = {
 		show: "Показать дорожку",
 		mute: "Выключить звук дорожки",
 		unmute: "Включить звук дорожки",
+	},
+	element: {
+		split: "Разделить",
+		copy: "Копировать",
+		duplicate: "Дублировать",
+		mute: "Выключить звук",
+		unmute: "Включить звук",
+		hide: "Скрыть",
+		show: "Показать",
+		expandKeyframes: "Развернуть ключевые кадры",
+		collapseKeyframes: "Свернуть ключевые кадры",
+		revealMedia: "Показать медиафайл",
+		replaceMedia: "Заменить медиафайл",
+		deleteText: "Удалить текст",
+		deleteClip: "Удалить клип",
+		deleteMultiplePrefix: "Удалить",
+		elementCountForms: {
+			one: "элемент",
+			few: "элемента",
+			many: "элементов",
+			other: "элемента",
+		},
 	},
 	audio: {
 		adjustClipVolume: "Перетащите, чтобы изменить громкость клипа",
