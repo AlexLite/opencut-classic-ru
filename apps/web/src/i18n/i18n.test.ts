@@ -13,6 +13,8 @@ import { changelogEn } from "./locales/en/changelog";
 import { changelogRu } from "./locales/ru/changelog";
 import { siteEn } from "./locales/en/site";
 import { siteRu } from "./locales/ru/site";
+import { legalEn } from "./locales/en/legal";
+import { legalRu } from "./locales/ru/legal";
 
 function collectLeafKeys(value: unknown, prefix = ""): string[] {
 	if (typeof value !== "object" || value === null) {
@@ -33,6 +35,7 @@ const dictionaryPairs = [
 	["preview", previewEn, previewRu],
 	["changelog", changelogEn, changelogRu],
 	["site", siteEn, siteRu],
+	["legal", legalEn, legalRu],
 ] as const;
 
 describe("i18n dictionaries", () => {
