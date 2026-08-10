@@ -9,6 +9,9 @@ export const assetsEn = {
 		names: {
 			blur: "Blur",
 		},
+		paramLabels: {
+			intensity: "Intensity",
+		},
 	},
 	stickers: {
 		searchPlaceholder: "Search...",
