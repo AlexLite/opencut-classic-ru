@@ -29,6 +29,10 @@ export const timelineRu = {
 		mute: "Выключить звук дорожки",
 		unmute: "Включить звук дорожки",
 	},
+	audio: {
+		adjustClipVolume: "Перетащите, чтобы изменить громкость клипа",
+		decibelsShort: "дБ",
+	},
 	bookmarks: {
 		ruler: "Линейка таймлайна",
 		bookmarkAt: "Закладка на отметке",
