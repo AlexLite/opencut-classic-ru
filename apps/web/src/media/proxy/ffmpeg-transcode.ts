@@ -25,14 +25,16 @@ export function buildLocalVideoTranscodeArgs({
 					"-crf",
 					"18",
 				];
+	const audioArgs =
+		purpose === "preview"
+			? ["-map", "0:a?", "-c:a", "aac", "-b:a", "128k"]
+			: ["-an"];
 
 	return [
 		"-i",
 		inputName,
 		"-map",
 		"0:v:0",
-		"-map",
-		"0:a?",
 		"-c:v",
 		"libx264",
 		...purposeArgs,
@@ -42,10 +44,7 @@ export function buildLocalVideoTranscodeArgs({
 		"high",
 		"-tag:v",
 		"avc1",
-		"-c:a",
-		"aac",
-		"-b:a",
-		purpose === "preview" ? "128k" : "192k",
+		...audioArgs,
 		"-movflags",
 		"+faststart",
 		outputName,
