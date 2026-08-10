@@ -8,11 +8,13 @@ import { SnapGuides } from "./snap-guides";
 import { TextEditOverlay } from "./text-edit-overlay";
 import { usePropertiesStore } from "@/components/editor/panels/properties/stores/properties-store";
 import { useEditor } from "@/editor/use-editor";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function PreviewInteractionOverlay() {
 	const [snapLines, setSnapLines] = useState<SnapLine[]>([]);
 	const editor = useEditor();
 	const viewport = usePreviewViewport();
+	const { previewT } = useI18n();
 	const selectedElements = useEditor((e) => e.selection.getSelectedElements());
 	const activeTabPerType = usePropertiesStore((s) => s.activeTabPerType);
 
@@ -70,7 +72,7 @@ export function PreviewInteractionOverlay() {
 			<div
 				className="absolute inset-0 pointer-events-auto"
 				role="application"
-				aria-label="Preview canvas"
+				aria-label={previewT.canvas}
 				style={{
 					cursor: viewport.isPanning
 						? "grabbing"
