@@ -39,4 +39,8 @@ export const uiRu = {
 		unsupportedWarning:
 			"Браузер поддерживает локальное хранилище не полностью. Некоторые функции могут работать некорректно.",
 	},
+	draggableItem: {
+		addToTimeline: "Добавить на таймлайн",
+		addOrDrag: "Добавить на таймлайн или перетащить в нужное место",
+	},
 } satisfies TranslationShape<typeof uiEn>;
