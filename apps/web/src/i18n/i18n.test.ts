@@ -84,15 +84,17 @@ describe("i18n dictionaries", () => {
 
 describe("locale store", () => {
 	test("switches locale and persists the selection", async () => {
-		const storage = new MemoryStorage();
-		const previousLocalStorage = Object.getOwnPropertyDescriptor(
-			globalThis,
-			"localStorage",
-		);
-		Object.defineProperty(globalThis, "localStorage", {
-			configurable: true,
-			value: storage,
-		});
+		const existingStorage = globalThis.localStorage;
+		const storage = existingStorage ?? new MemoryStorage();
+		const installedMemoryStorage = existingStorage == null;
+
+		if (installedMemoryStorage) {
+			Object.defineProperty(globalThis, "localStorage", {
+				configurable: true,
+				value: storage,
+			});
+		}
+		storage.clear();
 
 		try {
 			const { useLocaleStore } = await import("./store");
@@ -108,13 +110,8 @@ describe("locale store", () => {
 				version: 1,
 			});
 		} finally {
-			if (previousLocalStorage) {
-				Object.defineProperty(
-					globalThis,
-					"localStorage",
-					previousLocalStorage,
-				);
-			} else {
+			storage.clear();
+			if (installedMemoryStorage) {
 				Reflect.deleteProperty(globalThis, "localStorage");
 			}
 		}
