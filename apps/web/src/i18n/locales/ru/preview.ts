@@ -10,6 +10,7 @@ export const previewRu = {
 	pause: "Пауза",
 	saveSnapshot: "Сохранить снимок",
 	copySnapshot: "Копировать снимок",
+	snapshotCopied: "Снимок скопирован",
 	failedToSaveSnapshot: "Не удалось сохранить снимок",
 	failedToCopySnapshot: "Не удалось скопировать снимок",
 	tryAgain: "Попробуйте ещё раз",
@@ -17,5 +18,11 @@ export const previewRu = {
 	overlays: {
 		bookmarkNotes: "Заметки закладок",
 		guides: "Направляющие",
+	},
+	guides: {
+		title: "Направляющие",
+		custom: "Свои",
+		grid: "Сетка",
+		addGuideLine: "Добавить направляющую",
 	},
 } satisfies TranslationShape<typeof previewEn>;
