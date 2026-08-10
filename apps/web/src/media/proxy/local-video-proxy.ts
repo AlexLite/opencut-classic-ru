@@ -5,7 +5,10 @@ import {
 	LocalProxyError,
 	type LocalProxyFailureCode,
 } from "./proxy-errors";
-import type { LocalVideoTranscodePurpose } from "./ffmpeg-transcode";
+import {
+	buildLocalVideoTranscodeArgs,
+	type LocalVideoTranscodePurpose,
+} from "./ffmpeg-transcode";
 
 export interface LocalVideoProxyResult {
 	file: File;
@@ -18,6 +21,7 @@ export interface LocalVideoRenderMezzanineResult {
 }
 
 const MAX_FFMPEG_WASM_INPUT_BYTES = 2_000_000_000;
+const FFMPEG_PROXY_WORKER_PATH = "/ffmpeg-proxy.worker.js";
 
 type WorkerResponse =
 	| { type: "progress"; id: string; progress: number }
@@ -62,13 +66,14 @@ async function transcodeInWorker({
 	}
 	if (signal?.aborted) throw createAbortError();
 
-	const worker = new Worker(new URL("./ffmpeg-proxy.worker.ts", import.meta.url), {
-		type: "module",
-	});
+	const worker = new Worker(FFMPEG_PROXY_WORKER_PATH);
 	const id =
 		typeof crypto.randomUUID === "function"
 			? crypto.randomUUID()
 			: `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+	const inputName = `input-${id}`;
+	const outputName = `${purpose}-${id}.mp4`;
+	const args = buildLocalVideoTranscodeArgs({ inputName, outputName, purpose });
 
 	try {
 		return await new Promise<Blob>((resolve, reject) => {
@@ -112,7 +117,9 @@ async function transcodeInWorker({
 				id,
 				file,
 				useMultithread: canUseThreadedFfmpeg(),
-				purpose,
+				inputName,
+				outputName,
+				args,
 			});
 		});
 	} finally {
