@@ -47,6 +47,7 @@ describe("i18n dictionaries", () => {
 			expect(collectLeafKeys(russian).sort()).toEqual(
 				collectLeafKeys(english).sort(),
 			);
+		});
 	}
 });
 
