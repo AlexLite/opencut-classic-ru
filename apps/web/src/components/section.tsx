@@ -1,9 +1,12 @@
+"use client";
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { cn } from "@/utils/ui";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowDownIcon } from "@hugeicons/core-free-icons";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/i18n/use-i18n";
 
 const sectionExpandedCache = new Map<string, boolean>();
 const mountedSectionKeys = new Set<string>();
@@ -44,10 +47,7 @@ export function Section({
 
 	useEffect(() => {
 		if (!sectionKey) return;
-		if (
-			process.env.NODE_ENV !== "production" &&
-			mountedSectionKeys.has(sectionKey)
-		) {
+		if (process.env.NODE_ENV !== "production" && mountedSectionKeys.has(sectionKey)) {
 			console.error(
 				`[Section] duplicate sectionKey mounted simultaneously: "${sectionKey}"`,
 			);
@@ -97,6 +97,7 @@ export function SectionHeader({
 	onClick,
 	className,
 }: SectionHeaderProps) {
+	const { uiT } = useI18n();
 	const ctx = useSectionContext();
 	const isCollapsible = ctx?.collapsible ?? false;
 	const isOpen = ctx?.isOpen ?? true;
@@ -108,9 +109,7 @@ export function SectionHeader({
 			icon={ArrowDownIcon}
 			className={cn(
 				"size-4 shrink-0 transition-transform duration-200 ease-out",
-				isOpen
-					? "rotate-0 text-foreground"
-					: "-rotate-90 text-muted-foreground",
+				isOpen ? "rotate-0 text-foreground" : "-rotate-90 text-muted-foreground",
 			)}
 		/>
 	);
@@ -123,7 +122,7 @@ export function SectionHeader({
 					<Button
 						variant="ghost"
 						size="icon"
-						aria-label={isOpen ? "Collapse section" : "Expand section"}
+						aria-label={isOpen ? uiT.section.collapse : uiT.section.expand}
 						onClick={handleClick}
 					>
 						{chevronIcon}
@@ -149,9 +148,7 @@ export function SectionHeader({
 	);
 
 	return (
-		<div
-			className={cn("flex h-11 w-full items-center gap-2 px-3.5", className)}
-		>
+		<div className={cn("flex h-11 w-full items-center gap-2 px-3.5", className)}>
 			{innerContent}
 			{trailingArea}
 			{actions}
@@ -171,7 +168,6 @@ export function SectionTitle({
 	const ctx = useSectionContext();
 	const isCollapsible = ctx?.collapsible ?? false;
 	const isOpen = ctx?.isOpen ?? true;
-
 	const titleClass = cn(
 		"text-sm font-medium",
 		isCollapsible && isOpen ? "text-foreground" : "text-muted-foreground",
@@ -180,29 +176,16 @@ export function SectionTitle({
 
 	if (onClick) {
 		return (
-			<button
-				type="button"
-				className={cn("cursor-pointer", titleClass)}
-				onClick={onClick}
-			>
+			<button type="button" className={cn("cursor-pointer", titleClass)} onClick={onClick}>
 				{children}
 			</button>
 		);
 	}
-
 	return <span className={titleClass}>{children}</span>;
 }
 
-export function SectionFields({
-	children,
-	className,
-}: {
-	children: React.ReactNode;
-	className?: string;
-}) {
-	return (
-		<div className={cn("flex flex-col gap-3.5", className)}>{children}</div>
-	);
+export function SectionFields({ children, className }: { children: React.ReactNode; className?: string }) {
+	return <div className={cn("flex flex-col gap-3.5", className)}>{children}</div>;
 }
 
 export function SectionField({
@@ -227,17 +210,10 @@ export function SectionField({
 	);
 }
 
-export function SectionContent({
-	children,
-	className,
-}: {
-	children: React.ReactNode;
-	className?: string;
-}) {
+export function SectionContent({ children, className }: { children: React.ReactNode; className?: string }) {
 	const ctx = useSectionContext();
 	const isCollapsible = ctx?.collapsible ?? false;
 	const isOpen = ctx?.isOpen ?? true;
-
 	const content = <div className={cn("p-4 pt-0", className)}>{children}</div>;
 
 	if (isCollapsible) {
@@ -252,6 +228,5 @@ export function SectionContent({
 			</div>
 		);
 	}
-
 	return content;
 }
