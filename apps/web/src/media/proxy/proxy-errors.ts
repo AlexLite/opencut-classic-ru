@@ -1,5 +1,6 @@
 export type LocalProxyFailureCode =
 	| "ffmpeg-load-failed"
+	| "input-too-large"
 	| "out-of-memory"
 	| "transcode-failed"
 	| "worker-unavailable";
