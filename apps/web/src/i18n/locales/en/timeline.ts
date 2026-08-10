@@ -1,0 +1,28 @@
+export const timelineEn = {
+	ariaLabel: "Timeline",
+	toolbar: {
+		split: "Split element",
+		splitLeft: "Split left",
+		splitRight: "Split right",
+		extractAudio: "Extract audio",
+		restoreAudio: "Restore source audio",
+		duplicate: "Duplicate element",
+		freezeFrame: "Freeze frame (coming soon)",
+		delete: "Delete element",
+		addBookmark: "Add bookmark",
+		removeBookmark: "Remove bookmark",
+		noScene: "No scene",
+		autoSnapping: "Auto snapping",
+		rippleEditing: "Ripple editing",
+		zoomOut: "Zoom out",
+		zoomIn: "Zoom in",
+		zoom: "Timeline zoom",
+	},
+	track: {
+		delete: "Delete track",
+		hide: "Hide track",
+		show: "Show track",
+		mute: "Mute track",
+		unmute: "Unmute track",
+	},
+} as const;
