@@ -83,15 +83,6 @@ function getProxyDescription({ family }: { family: VideoCodecFamily }): string {
 	return messages.genericUnsupported;
 }
 
-function getProxyFailureDescription(error: unknown): string {
-	const messages = getMediaProxyMessages();
-	const normalized = classifyLocalProxyError(error);
-	if (normalized.code === "ffmpeg-load-failed") return messages.loadFailed;
-	if (normalized.code === "out-of-memory") return messages.memoryFailed;
-	if (normalized.code === "worker-unavailable") return messages.workerUnavailable;
-	return messages.transcodeFailed;
-}
-
 function shouldWarnAboutLocalTranscode({ file }: { file: File }): boolean {
 	if (file.size >= LARGE_PROXY_FILE_BYTES) return true;
 	if (typeof navigator === "undefined") return false;
@@ -217,10 +208,7 @@ export async function processMediaAssets({
 						} catch (error) {
 							const normalized = classifyLocalProxyError(error);
 							proxyFallbackFailure = normalized.code;
-							toast.error(proxyMessages.failedTitle, {
-								id: proxyToastId,
-								description: getProxyFailureDescription(normalized),
-							});
+							toast.dismiss(proxyToastId);
 						}
 					}
 				} catch (error) {

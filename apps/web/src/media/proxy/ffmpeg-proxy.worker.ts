@@ -1,6 +1,6 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL } from "@ffmpeg/util";
-import { classifyLocalProxyError } from "./proxy-errors";
+import { classifyLocalProxyError, LocalProxyError } from "./proxy-errors";
 
 const SINGLE_THREAD_CORE = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
 const MULTI_THREAD_CORE = "https://cdn.jsdelivr.net/npm/@ffmpeg/core-mt@0.12.10/dist/umd";
@@ -32,19 +32,31 @@ async function loadFfmpeg({ useMultithread }: { useMultithread: boolean }) {
 	ffmpeg = new FFmpeg();
 	loadedMode = null;
 	const baseURL = useMultithread ? MULTI_THREAD_CORE : SINGLE_THREAD_CORE;
-	const config = {
-		coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-		wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-		...(useMultithread && {
-			workerURL: await toBlobURL(
-				`${baseURL}/ffmpeg-core.worker.js`,
-				"text/javascript",
-			),
-		}),
-	};
-	await ffmpeg.load(config);
-	loadedMode = mode;
-	return ffmpeg;
+
+	try {
+		const config = {
+			coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+			wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+			...(useMultithread && {
+				workerURL: await toBlobURL(
+					`${baseURL}/ffmpeg-core.worker.js`,
+					"text/javascript",
+				),
+			}),
+		};
+		await ffmpeg.load(config);
+		loadedMode = mode;
+		return ffmpeg;
+	} catch (error) {
+		ffmpeg?.terminate();
+		ffmpeg = null;
+		loadedMode = null;
+		throw new LocalProxyError(
+			"ffmpeg.wasm core could not be loaded",
+			"ffmpeg-load-failed",
+			{ cause: error },
+		);
+	}
 }
 
 self.onmessage = async (event: MessageEvent<TranscodeRequest>) => {
