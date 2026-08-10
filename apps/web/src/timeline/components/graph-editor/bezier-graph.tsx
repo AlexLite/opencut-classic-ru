@@ -6,6 +6,7 @@ import { useCommittedRef } from "@/hooks/use-committed-ref";
 import { getBezierPoint } from "@/animation/bezier";
 import type { NormalizedCubicBezier } from "@/animation/types";
 import { cn } from "@/utils/ui";
+import { useI18n } from "@/i18n/use-i18n";
 
 const GRAPH_WIDTH = 140;
 const GRAPH_HEIGHT = 94;
@@ -89,6 +90,7 @@ export function BezierGraph({
 	const [activeHandle, setActiveHandle] = useState<BezierHandle | null>(null);
 	const isShiftPressedRef = useShiftKey();
 	const latestValueRef = useCommittedRef(value);
+	const { timelineT } = useI18n();
 
 	function getPointerPosition({
 		event,
@@ -164,7 +166,7 @@ export function BezierGraph({
 			onPointerUp={onPointerUp}
 			onPointerCancel={onPointerCancel}
 		>
-			<title>Bezier curve editor</title>
+			<title>{timelineT.graphEditor.bezierCurveEditor}</title>
 			<line
 				x1={p0.x}
 				y1={p0.y}
