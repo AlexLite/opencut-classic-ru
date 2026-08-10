@@ -11,6 +11,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useEditor } from "@/editor/use-editor";
+import { useI18n } from "@/i18n/use-i18n";
 import type { TimelineDragData } from "@/timeline/drag";
 import { cn } from "@/utils/ui";
 import type { MediaTime } from "@/wasm";
@@ -46,6 +47,7 @@ export function DraggableItem({
 	variant = "card",
 	isDraggable = true,
 }: DraggableItemProps) {
+	const { uiT } = useI18n();
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
 	const dragRef = useRef<HTMLDivElement>(null);
@@ -61,29 +63,18 @@ export function DraggableItem({
 
 	useEffect(() => {
 		if (!isDragging) return;
-
 		const handleDragOver = (e: DragEvent) => {
 			setDragPosition({ x: e.clientX, y: e.clientY });
 		};
-
 		document.addEventListener("dragover", handleDragOver);
-
-		return () => {
-			document.removeEventListener("dragover", handleDragOver);
-		};
+		return () => document.removeEventListener("dragover", handleDragOver);
 	}, [isDragging]);
 
 	const handleDragStart = (event: React.DragEvent) => {
 		event.dataTransfer.setDragImage(emptyImg, 0, 0);
-
-		editor.timeline.dragSource.begin({
-			dataTransfer: event.dataTransfer,
-			dragData,
-		});
-
+		editor.timeline.dragSource.begin({ dataTransfer: event.dataTransfer, dragData });
 		setDragPosition({ x: event.clientX, y: event.clientY });
 		setIsDragging(true);
-
 		onDragStart?.({ e: event });
 	};
 
@@ -95,16 +86,8 @@ export function DraggableItem({
 	return (
 		<>
 			{variant === "card" ? (
-				<div
-					ref={dragRef}
-					className={cn("group relative", containerClassName ?? "w-28")}
-				>
-					<div
-						className={cn(
-							"relative flex h-auto w-full cursor-default flex-col gap-1 p-",
-							className,
-						)}
-					>
+				<div ref={dragRef} className={cn("group relative", containerClassName ?? "w-28")}>
+					<div className={cn("relative flex h-auto w-full cursor-default flex-col gap-1 p-", className)}>
 						<AspectRatio
 							ratio={aspectRatio}
 							className={cn(
@@ -121,6 +104,7 @@ export function DraggableItem({
 								<PlusButton
 									className="opacity-0 group-hover:opacity-100"
 									onClick={handleAddToTimeline}
+									label={uiT.draggableItem.addToTimeline}
 								/>
 							)}
 						</AspectRatio>
@@ -131,19 +115,14 @@ export function DraggableItem({
 							>
 								<span className="sr-only">{name}</span>
 								<span aria-hidden="true">
-									{name.length > 8
-										? `${name.slice(0, 16)}...${name.slice(-3)}`
-										: name}
+									{name.length > 8 ? `${name.slice(0, 16)}...${name.slice(-3)}` : name}
 								</span>
 							</span>
 						)}
 					</div>
 				</div>
 			) : (
-				<div
-					ref={dragRef}
-					className={cn("group relative w-full", containerClassName)}
-				>
+				<div ref={dragRef} className={cn("group relative w-full", containerClassName)}>
 					<button
 						type="button"
 						className={cn(
@@ -155,12 +134,8 @@ export function DraggableItem({
 						onDragStart={isDraggable ? handleDragStart : undefined}
 						onDragEnd={isDraggable ? handleDragEnd : undefined}
 					>
-						<div className="size-6 shrink-0 overflow-hidden rounded-sm">
-							{preview}
-						</div>
-						<span className="w-full flex-1 truncate text-sm text-left">
-							{name}
-						</span>
+						<div className="size-6 shrink-0 overflow-hidden rounded-sm">{preview}</div>
+						<span className="w-full flex-1 truncate text-sm text-left">{name}</span>
 					</button>
 				</div>
 			)}
@@ -171,10 +146,7 @@ export function DraggableItem({
 				createPortal(
 					<div
 						className="pointer-events-none fixed z-9999"
-						style={{
-							left: dragPosition.x - 40,
-							top: dragPosition.y - 40,
-						}}
+						style={{ left: dragPosition.x - 40, top: dragPosition.y - 40 }}
 					>
 						<div className="w-[80px]">
 							<AspectRatio
@@ -187,7 +159,8 @@ export function DraggableItem({
 								{shouldShowPlusOnDrag && (
 									<PlusButton
 										onClick={handleAddToTimeline}
-										tooltipText="Add to timeline or drag to position"
+										label={uiT.draggableItem.addOrDrag}
+										showTooltip
 									/>
 								)}
 							</AspectRatio>
@@ -202,11 +175,13 @@ export function DraggableItem({
 function PlusButton({
 	className,
 	onClick,
-	tooltipText,
+	label,
+	showTooltip = false,
 }: {
 	className?: string;
 	onClick?: () => void;
-	tooltipText?: string;
+	label: string;
+	showTooltip?: boolean;
 }) {
 	const button = (
 		<Button
@@ -220,22 +195,22 @@ function PlusButton({
 				e.stopPropagation();
 				onClick?.();
 			}}
-			title={tooltipText}
+			aria-label={label}
+			title={label}
 		>
 			<Plus />
 		</Button>
 	);
 
-	if (tooltipText) {
+	if (showTooltip) {
 		return (
 			<Tooltip>
 				<TooltipTrigger asChild>{button}</TooltipTrigger>
 				<TooltipContent>
-					<p>{tooltipText}</p>
+					<p>{label}</p>
 				</TooltipContent>
 			</Tooltip>
 		);
 	}
-
 	return button;
 }
