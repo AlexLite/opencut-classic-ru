@@ -77,18 +77,22 @@ The capability layer reports WebCodecs as unavailable instead of throwing during
 
 ## ffmpeg.wasm Worker and bundle impact
 
-The application package adds only the `@ffmpeg/ffmpeg` and `@ffmpeg/util` JavaScript wrappers. The heavy ffmpeg core is loaded lazily only when an unsupported video needs local transcoding.
+No ffmpeg wrapper package is added to the application dependencies. The app owns a small classic Worker at `public/ffmpeg-proxy.worker.js`; that Worker lazily loads the pinned ffmpeg core only when an unsupported video actually needs local transcoding.
+
+Keeping the ffmpeg core loader in a static `public/` Worker means the ffmpeg wrapper and its internal Worker are not part of the Next.js/Turbopack module graph. The TypeScript application sends only the source `File`, the selected single/multi-thread mode, temporary local filenames, and an internally constructed ffmpeg argument list to this same-origin Worker.
+
+The Worker follows the same low-level lifecycle used by the official ffmpeg.wasm worker: load `createFFmpegCore`, pass the WASM/worker URLs through `mainScriptUrlOrBlob`, write/read files through the in-memory filesystem, execute ffmpeg, and report progress.
 
 The current fallback uses ffmpeg.wasm core `0.12.10`:
 
 - single-thread: `@ffmpeg/core`;
 - multi-thread: `@ffmpeg/core-mt`.
 
-The official ffmpeg.wasm example describes the core download as roughly 31 MB. Multi-thread mode requires `SharedArrayBuffer`, and the implementation enables it only when both `crossOriginIsolated === true` and `SharedArrayBuffer` are available.
+The heavy core assets are fetched lazily from pinned jsDelivr URLs; there is no ffmpeg core payload in the normal editor JavaScript bundle. Multi-thread mode requires `SharedArrayBuffer`, and the implementation enables it only when both `crossOriginIsolated === true` and `SharedArrayBuffer` are available.
 
 The current ffmpeg.wasm WebAssembly core has a documented **2 GB input-file hard limit**. The implementation treats this conservatively as `2_000_000_000` bytes: files at or above that size are rejected before starting the Worker with a clear localized message, while the original is still imported locally. Retrying cannot change this limit, so the UI intentionally does not show a retry action for this particular failure.
 
-The core files are downloaded from jsDelivr at runtime. Deployments with a strict CSP or offline requirements should self-host the same pinned core files and update the Worker base URLs.
+Deployments with a strict CSP or offline requirements should self-host the same pinned core files and update the Worker base URLs. Loading the core from jsDelivr requires the deployment's CSP to permit the corresponding network requests.
 
 ## COOP/COEP for multi-thread ffmpeg.wasm
 
@@ -156,7 +160,7 @@ Use at least these fixtures:
 - Mediabunny reading/decoder config: https://mediabunny.dev/guide/reading-media-files
 - Mediabunny video encoding config: https://mediabunny.dev/api/VideoEncodingConfig
 - ffmpeg.wasm usage: https://ffmpegwasm.netlify.app/docs/getting-started/usage/
-- ffmpeg.wasm API: https://ffmpegwasm.netlify.app/docs/api/ffmpeg/classes/ffmpeg/
+- ffmpeg.wasm worker source: https://github.com/ffmpegwasm/ffmpeg.wasm/blob/v12.15/packages/ffmpeg/src/worker.ts
 - ffmpeg.wasm FAQ: https://ffmpegwasm.netlify.app/docs/faq/
 - Chrome WebCodecs guidance: https://developer.chrome.com/docs/web-platform/best-practices/webcodecs
 - WebKit Safari 17.2 notes: https://webkit.org/blog/14787/webkit-features-in-safari-17-2/
