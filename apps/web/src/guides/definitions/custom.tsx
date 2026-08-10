@@ -1,3 +1,5 @@
+"use client";
+
 import { PlusSignIcon, RulerIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@/components/ui/button";
