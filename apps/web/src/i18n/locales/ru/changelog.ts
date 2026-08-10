@@ -7,9 +7,10 @@ export const changelogRu = {
 	copyAsMarkdown: "Копировать как Markdown",
 	copied: "Скопировано",
 	sections: {
-		features: "Новые возможности",
-		improvements: "Улучшения",
-		bugFixes: "Исправления ошибок",
-		chores: "Технические изменения",
+		new: "Новые возможности",
+		improved: "Улучшения",
+		fixed: "Исправления",
+		breaking: "Несовместимые изменения",
+		technical: "Технические детали",
 	},
 } satisfies TranslationShape<typeof changelogEn>;
