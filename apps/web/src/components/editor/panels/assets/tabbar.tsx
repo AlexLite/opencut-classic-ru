@@ -11,14 +11,29 @@ import { cn } from "@/utils/ui";
 import {
 	TAB_KEYS,
 	tabs,
+	type Tab,
 	useAssetsPanelStore,
 } from "@/components/editor/panels/assets/assets-panel-store";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function TabBar() {
 	const { activeTab, setActiveTab } = useAssetsPanelStore();
 	const [showTopFade, setShowTopFade] = useState(false);
 	const [showBottomFade, setShowBottomFade] = useState(false);
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const { t } = useI18n();
+
+	const tabLabels: Record<Tab, string> = {
+		media: t.assets.media,
+		sounds: t.assets.sounds,
+		text: t.assets.text,
+		stickers: t.assets.stickers,
+		effects: t.assets.effects,
+		transitions: t.assets.transitions,
+		captions: t.assets.captions,
+		adjustment: t.assets.adjustment,
+		settings: t.assets.settings,
+	};
 
 	const checkScrollPosition = useCallback(() => {
 		const element = scrollRef.current;
@@ -53,13 +68,14 @@ export function TabBar() {
 			>
 				{TAB_KEYS.map((tabKey) => {
 					const tab = tabs[tabKey];
+					const label = tabLabels[tabKey];
 					return (
 						<Tooltip key={tabKey} delayDuration={10}>
 							<TooltipTrigger asChild>
 								<Button
 									variant={activeTab === tabKey ? "secondary" : "ghost"}
 									size="icon"
-									aria-label={tab.label}
+									aria-label={label}
 									className={cn(
 										"shrink-0",
 										"h-8 w-8",
@@ -77,7 +93,7 @@ export function TabBar() {
 								sideOffset={8}
 							>
 								<div className="text-foreground text-sm leading-none font-medium">
-									{tab.label}
+									{label}
 								</div>
 							</TooltipContent>
 						</Tooltip>
