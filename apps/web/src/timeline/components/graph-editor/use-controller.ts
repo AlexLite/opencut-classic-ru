@@ -170,6 +170,8 @@ export function useGraphEditorController() {
 		state.status === "ready"
 			? timelineT.graphEditor.open
 			: timelineT.graphEditor.unavailable[state.reason];
+	const localizedState =
+		state.status === "ready" ? state : { ...state, message };
 
 	return {
 		open,
@@ -177,7 +179,7 @@ export function useGraphEditorController() {
 		canOpen: state.status === "ready",
 		tooltip: message,
 		message,
-		state,
+		state: localizedState,
 		onActiveComponentKeyChange: handleActiveComponentKeyChange,
 		onPreviewValue: handlePreviewValue,
 		onCommitValue: handleCommitValue,
