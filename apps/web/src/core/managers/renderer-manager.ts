@@ -5,6 +5,10 @@ import { CanvasRenderer } from "@/services/renderer/canvas-renderer";
 import { SceneExporter } from "@/services/renderer/scene-exporter";
 import { buildScene } from "@/services/renderer/scene-builder";
 import { createTimelineAudioBuffer } from "@/media/audio";
+import { prepareMediaAssetsForExport } from "@/media/proxy/export-media-fallback";
+import { LocalProxyError } from "@/media/proxy/proxy-errors";
+import { getMediaProxyMessages } from "@/i18n/media-proxy";
+import { videoCache } from "@/services/video-cache/service";
 import { formatTimecode } from "opencut-wasm";
 import { frameRateToFloat } from "@/fps/utils";
 import { downloadBlob } from "@/utils/browser";
@@ -148,6 +152,8 @@ export class RendererManager {
 		onCancel?: () => boolean;
 	}): Promise<ExportResult> {
 		const { format, quality, fps, includeAudio } = options;
+		let cleanupPreparedMedia = () => {};
+		let fallbackMediaIds: string[] = [];
 
 		try {
 			const tracks = this.editor.scenes.getActiveScene().tracks;
@@ -165,20 +171,49 @@ export class RendererManager {
 
 			const exportFps = fps ?? activeProject.settings.fps;
 			const canvasSize = activeProject.settings.canvasSize;
+			const fallbackPreparationWeight = 0.25;
+			const preparedMedia = await prepareMediaAssetsForExport({
+				tracks,
+				mediaAssets,
+				shouldCancel: onCancel,
+				onProgress: (progress) => {
+					onProgress?.({ progress: progress * fallbackPreparationWeight });
+				},
+			});
+			cleanupPreparedMedia = preparedMedia.cleanup;
+
+			if (preparedMedia.cancelled) {
+				return { success: false, cancelled: true };
+			}
+
+			fallbackMediaIds = preparedMedia.mediaAssets
+				.filter((asset, index) => asset.file !== mediaAssets[index]?.file)
+				.map((asset) => asset.id);
+			for (const mediaId of fallbackMediaIds) {
+				videoCache.clearVideo({ mediaId });
+			}
+
+			const preparationWeight =
+				preparedMedia.fallbackCount > 0 ? fallbackPreparationWeight : 0;
+			if (onCancel?.()) {
+				return { success: false, cancelled: true };
+			}
 
 			let audioBuffer: AudioBuffer | null = null;
+			const audioWeight = includeAudio ? 0.05 : 0;
 			if (includeAudio) {
-				onProgress?.({ progress: 0.05 });
+				onProgress?.({ progress: preparationWeight });
 				audioBuffer = await createTimelineAudioBuffer({
 					tracks,
-					mediaAssets,
+					mediaAssets: preparedMedia.mediaAssets,
 					duration,
 				});
+				onProgress?.({ progress: preparationWeight + audioWeight });
 			}
 
 			const scene = buildScene({
 				tracks,
-				mediaAssets,
+				mediaAssets: preparedMedia.mediaAssets,
 				duration,
 				canvasSize,
 				background: activeProject.settings.background,
@@ -195,10 +230,11 @@ export class RendererManager {
 			});
 
 			exporter.on("progress", (progress) => {
-				const adjustedProgress = includeAudio
-					? 0.05 + progress * 0.95
-					: progress;
-				onProgress?.({ progress: adjustedProgress });
+				const completedBeforeRender = preparationWeight + audioWeight;
+				const remainingProgress = 1 - completedBeforeRender;
+				onProgress?.({
+					progress: completedBeforeRender + progress * remainingProgress,
+				});
 			});
 
 			let cancelled = false;
@@ -232,10 +268,21 @@ export class RendererManager {
 			}
 		} catch (error) {
 			console.error("Export failed:", error);
+			if (error instanceof LocalProxyError) {
+				return {
+					success: false,
+					error: getMediaProxyMessages().renderFallbackFailed,
+				};
+			}
 			return {
 				success: false,
 				error: error instanceof Error ? error.message : "Unknown export error",
 			};
+		} finally {
+			for (const mediaId of fallbackMediaIds) {
+				videoCache.clearVideo({ mediaId });
+			}
+			cleanupPreparedMedia();
 		}
 	}
 
