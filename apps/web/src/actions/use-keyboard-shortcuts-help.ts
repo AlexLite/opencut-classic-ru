@@ -49,6 +49,7 @@ function formatKey({
 		.replace("end", labels.end)
 		.replace("delete", labels.delete)
 		.replace("backspace", labels.backspace)
+		.replace("escape", "Esc")
 		.replace("-", "+");
 }
 
