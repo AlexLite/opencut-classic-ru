@@ -11,24 +11,37 @@ import {
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/utils/ui";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function GridPopover({ children }: { children: React.ReactNode }) {
 	const activeGuide = usePreviewStore((state) => state.activeGuide);
 	const toggleGuide = usePreviewStore((state) => state.toggleGuide);
 	const activeGuideDef = getGuideById(activeGuide);
 	const options = activeGuideDef?.renderOptions?.();
+	const { previewT } = useI18n();
+
+	const getGuideLabel = (guide: (typeof GUIDE_REGISTRY)[number]) => {
+		switch (guide.id) {
+			case "custom":
+				return previewT.guides.custom;
+			case "grid":
+				return previewT.guides.grid;
+			default:
+				return guide.label;
+		}
+	};
 
 	return (
 		<Popover>
 			<PopoverTrigger>{children}</PopoverTrigger>
 			<PopoverContent sideOffset={8} className="w-60 px-0">
 				<div className="flex flex-col gap-2 px-4">
-					<Label>Guides</Label>
+					<Label>{previewT.guides.title}</Label>
 					<div className="grid grid-cols-3 gap-1">
 						{GUIDE_REGISTRY.map((guide) => (
 							<GridItem
 								key={guide.id}
-								label={guide.label}
+								label={getGuideLabel(guide)}
 								preview={guide.renderPreview()}
 								isSelected={activeGuide === guide.id}
 								onClick={() => toggleGuide(guide.id)}
