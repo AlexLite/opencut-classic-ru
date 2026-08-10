@@ -23,12 +23,12 @@ import File
   -> export re-checks the original stream when capability is unknown/unsupported
   -> if original decode is still unsupported, create a temporary full-resolution local render mezzanine
        -> H.264/AVC High, 8-bit yuv420p
-       -> source resolution is preserved
+       -> source content resolution is preserved (odd dimensions may receive <=1 px padding)
        -> AAC audio
        -> MP4 faststart
        -> verify the generated stream with VideoDecoder.isConfigSupported()
   -> render effects locally
-  -> WebCodecs VideoEncoder (prefer-hardware)
+  -> WebCodecs VideoEncoder (prefer-hardware when supported, otherwise no-preference)
   -> existing Mediabunny MP4/WebM muxer
   -> discard temporary render mezzanine/object URLs after export
 ```
@@ -42,7 +42,9 @@ The implementation checks:
 - `VideoDecoder.isConfigSupported()` with the exact decoder config returned by Mediabunny;
 - `VideoEncoder.isConfigSupported()` before export;
 - `VideoDecoder.isTypeSupported()` only when a browser exposes that non-standard method;
-- `hardwareAcceleration: "prefer-hardware"` first, with a `no-preference` capability fallback for decode probing.
+- `hardwareAcceleration: "prefer-hardware"` first, with a `no-preference` capability fallback.
+
+The decoder mode returned by the capability check is also passed to the real Mediabunny `VideoSampleSink`/`CanvasSink`. The encoder mode returned by the encoder capability check is passed to `CanvasSource`, together with the verified full codec string, so feature detection and the actual WebCodecs path use the same settings.
 
 `prefer-hardware` is a hint. A browser may ignore it, and a supported codec family does not imply that every profile, level, bit depth, resolution, or platform decoder path is supported.
 
@@ -51,7 +53,9 @@ The implementation checks:
 The preview proxy and the export fallback intentionally have different purposes:
 
 - **preview proxy**: at most 1280x720, CRF 23, cached in OPFS, used only for interactive preview;
-- **render mezzanine**: source resolution, CRF 18, temporary, created only when the original cannot be decoded for final rendering.
+- **render mezzanine**: source content resolution, CRF 18, temporary, created only when the original cannot be decoded for final rendering.
+
+The render mezzanine does not downscale the video. `yuv420p` requires even coded dimensions, so an odd source width/height is padded by at most one pixel instead of being resized.
 
 The 720p preview proxy is never used as the master source for final export. If the original stream becomes decodable (for example after reopening the project on a different browser/device), export uses the original and skips the render mezzanine.
 
@@ -73,7 +77,7 @@ The capability layer reports WebCodecs as unavailable instead of throwing during
 
 ## ffmpeg.wasm Worker and bundle impact
 
-The application bundle adds only the `@ffmpeg/ffmpeg` and `@ffmpeg/util` JavaScript wrappers. The heavy ffmpeg core is loaded lazily only when an unsupported video needs local transcoding.
+The application package adds only the `@ffmpeg/ffmpeg` and `@ffmpeg/util` JavaScript wrappers. The heavy ffmpeg core is loaded lazily only when an unsupported video needs local transcoding.
 
 The current fallback uses ffmpeg.wasm core `0.12.10`:
 
@@ -81,6 +85,8 @@ The current fallback uses ffmpeg.wasm core `0.12.10`:
 - multi-thread: `@ffmpeg/core-mt`.
 
 The official ffmpeg.wasm example describes the core download as roughly 31 MB. Multi-thread mode requires `SharedArrayBuffer`, and the implementation enables it only when both `crossOriginIsolated === true` and `SharedArrayBuffer` are available.
+
+The current ffmpeg.wasm WebAssembly core has a documented **2 GB input-file hard limit**. Files at or above 2 GB are rejected before starting the Worker with a clear localized message; the original is still imported locally. Retrying cannot change this limit, so the UI intentionally does not show a retry action for this particular failure.
 
 The core files are downloaded from jsDelivr at runtime. Deployments with a strict CSP or offline requirements should self-host the same pinned core files and update the Worker base URLs.
 
@@ -117,15 +123,16 @@ Object URLs for preview proxies are revoked when project media is cleared. Objec
 Proxy/render fallback errors are classified into:
 
 - ffmpeg core loading failure;
+- input file at/above the current 2 GB ffmpeg.wasm limit;
 - out-of-memory failure;
 - Worker unavailable;
 - generic transcode failure.
 
-The original file remains imported if preview proxy creation fails. The UI offers a retry action after the media asset has been saved. Very large files (750 MiB or more) and devices reporting <=4 GiB device memory or <=4 logical processors receive an early warning.
+The original file remains imported if preview proxy creation fails. The UI offers a retry action after the media asset has been saved for failures that can reasonably succeed on retry (for example core loading or memory pressure), but not for the 2 GB hard input limit. Very large files (750 MiB or more) and devices reporting <=4 GiB device memory or <=4 logical processors receive an early warning.
 
 Final export is cancellable while a render mezzanine is being generated: cancelling terminates the local Worker. A generated render mezzanine is capability-checked before rendering; export fails with a localized error instead of continuing with an undecodable temporary source.
 
-ffmpeg.wasm is substantially slower and more memory-hungry than native FFmpeg. The current Worker writes the source into the ffmpeg virtual filesystem, so very large files can require multiple copies of the file in memory. This applies especially to full-resolution render fallbacks. For multi-gigabyte production media, a future improvement should mount the source through WORKERFS/streaming I/O instead of copying the complete file into WASM memory.
+ffmpeg.wasm is substantially slower and more memory-hungry than native FFmpeg. For files below the hard input limit, the current Worker still copies the complete source into the ffmpeg virtual filesystem and can therefore require multiple copies of the file in memory. Streaming/mounted input is a useful future optimization for memory pressure, but it does not remove the current core's documented 2 GB limit.
 
 ## Manual browser checks
 
@@ -137,17 +144,20 @@ Use at least these fixtures:
 4. HEVC stream rejected by the browser: import succeeds; UI explains that a local H.264/AVC preview copy is being created; export uses a full-resolution local H.264 render fallback if the original remains undecodable.
 5. Force ffmpeg core loading failure (offline/CSP): original stays imported; localized retry action is available for preview and export reports a localized render-fallback failure when applicable.
 6. Force low-memory/large-file conditions: warning is shown and the UI remains responsive.
-7. Cancel export while the render mezzanine is being created: the Worker terminates and export reports cancellation rather than a transcode error.
-8. Export MP4 in Chrome/Edge and Safari where available: effects render locally; WebCodecs encoder is detected; Mediabunny muxes locally.
-9. Reload the project after a preview proxy was created: OPFS preview proxy is reused rather than retranscoded; final export still prefers the original if it is decodable.
+7. Import an unsupported stream in a file >=2 GB: original remains imported, the size-limit message is shown, no pointless retry action is offered, and no ffmpeg Worker starts.
+8. Cancel export while the render mezzanine is being created: the Worker terminates and export reports cancellation rather than a transcode error.
+9. Export MP4 in Chrome/Edge and Safari where available: effects render locally; WebCodecs encoder is detected; Mediabunny muxes locally.
+10. Reload the project after a preview proxy was created: OPFS preview proxy is reused rather than retranscoded; final export still prefers the original if it is decodable.
 
 ## References
 
 - WebCodecs specification: https://www.w3.org/TR/webcodecs/
 - Mediabunny codec support: https://mediabunny.dev/guide/supported-formats-and-codecs
 - Mediabunny reading/decoder config: https://mediabunny.dev/guide/reading-media-files
+- Mediabunny video encoding config: https://mediabunny.dev/api/VideoEncodingConfig
 - ffmpeg.wasm usage: https://ffmpegwasm.netlify.app/docs/getting-started/usage/
 - ffmpeg.wasm API: https://ffmpegwasm.netlify.app/docs/api/ffmpeg/classes/ffmpeg/
+- ffmpeg.wasm FAQ: https://ffmpegwasm.netlify.app/docs/faq/
 - Chrome WebCodecs guidance: https://developer.chrome.com/docs/web-platform/best-practices/webcodecs
 - WebKit Safari 17.2 notes: https://webkit.org/blog/14787/webkit-features-in-safari-17-2/
 - WebKit Safari 17.4 notes: https://webkit.org/blog/15063/webkit-features-in-safari-17-4/
