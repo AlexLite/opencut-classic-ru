@@ -62,7 +62,7 @@ export function StorageProvider({ children }: StorageProviderProps) {
 					isInitialized: false,
 					isLoading: false,
 					hasSupport: storageService.isFullySupported(),
-					error: error instanceof Error ? error.message : t.common.unknownError,
+					error: t.common.unknownError,
 				});
 			}
 		};
