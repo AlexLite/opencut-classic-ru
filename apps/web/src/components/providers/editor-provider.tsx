@@ -14,6 +14,8 @@ import {
 	initializeGpuRenderer,
 	isGpuAvailable,
 } from "@/services/renderer/gpu-renderer";
+import { useI18n } from "@/i18n/use-i18n";
+import { getCurrentI18n } from "@/i18n/runtime";
 
 interface EditorProviderProps {
 	projectId: string;
@@ -23,6 +25,7 @@ interface EditorProviderProps {
 export function EditorProvider({ projectId, children }: EditorProviderProps) {
 	const activeProject = useEditor((e) => e.project.getActiveOrNull());
 	const router = useRouter();
+	const { t } = useI18n();
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const { setLoadingProject } = useKeybindingsStore();
@@ -53,28 +56,29 @@ export function EditorProvider({ projectId, children }: EditorProviderProps) {
 					err instanceof Error &&
 					(err.message.includes("not found") ||
 						err.message.includes("does not exist"));
+				const currentT = getCurrentI18n().t;
 
 				if (isNotFound) {
 					try {
 						const newProjectId = await editor.project.createNewProject({
-							name: "Untitled Project",
+							name: currentT.projects.untitledProject,
 						});
 						router.replace(`/editor/${newProjectId}`);
-					} catch (_createErr) {
-						setError("Failed to create project");
+					} catch (createError) {
+						console.error("Failed to create replacement project:", createError);
+						setError(currentT.editor.runtime.createFailed);
 						setIsLoading(false);
 					}
 				} else {
 					const wasmPanic = (window as Window & { __wasmPanic?: string })
 						.__wasmPanic;
 					if (wasmPanic) {
+						console.error("WASM panic while loading project:", wasmPanic);
 						delete (window as Window & { __wasmPanic?: string }).__wasmPanic;
-						setError(wasmPanic);
 					} else {
-						setError(
-							err instanceof Error ? err.message : "Failed to load project",
-						);
+						console.error("Failed to load project:", err);
 					}
+					setError(currentT.editor.runtime.loadFailed);
 					setIsLoading(false);
 				}
 			}
@@ -102,7 +106,9 @@ export function EditorProvider({ projectId, children }: EditorProviderProps) {
 			<div className="bg-background flex h-screen w-screen items-center justify-center">
 				<div className="flex flex-col items-center gap-4">
 					<Loader2 className="text-muted-foreground size-8 animate-spin" />
-					<p className="text-muted-foreground text-sm">Loading project...</p>
+					<p className="text-muted-foreground text-sm">
+						{t.editor.runtime.loadingProject}
+					</p>
 				</div>
 			</div>
 		);
@@ -113,7 +119,9 @@ export function EditorProvider({ projectId, children }: EditorProviderProps) {
 			<div className="bg-background flex h-screen w-screen items-center justify-center">
 				<div className="flex flex-col items-center gap-4">
 					<Loader2 className="text-muted-foreground size-8 animate-spin" />
-					<p className="text-muted-foreground text-sm">Exiting project...</p>
+					<p className="text-muted-foreground text-sm">
+						{t.editor.runtime.exitingProject}
+					</p>
 				</div>
 			</div>
 		);
