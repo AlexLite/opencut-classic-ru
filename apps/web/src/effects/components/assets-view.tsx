@@ -63,11 +63,13 @@ function EffectItem({ effect }: { effect: EffectDefinition }) {
 
 	const handleAddToTimeline = useCallback(() => {
 		const currentTime = editor.playback.getCurrentTime();
-		const element = buildEffectElement({
-			effectType: effect.type,
+		const element = {
+			...buildEffectElement({
+				effectType: effect.type,
+				startTime: currentTime,
+			}),
 			name: localizedName,
-			startTime: currentTime,
-		});
+		};
 
 		editor.timeline.insertElement({
 			placement: { mode: "auto", trackType: "effect" },
