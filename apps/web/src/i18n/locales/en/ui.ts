@@ -21,4 +21,18 @@ export const uiEn = {
 		opacity: "Opacity",
 		open: "Open color picker",
 	},
+	breadcrumb: {
+		label: "Breadcrumb",
+		more: "More",
+	},
+	section: {
+		collapse: "Collapse section",
+		expand: "Expand section",
+	},
+	editableTimecode: {
+		clickToEdit: "Click to edit time",
+	},
+	storage: {
+		unsupportedWarning: "Storage not fully supported. Some features may not work.",
+	},
 } as const;
