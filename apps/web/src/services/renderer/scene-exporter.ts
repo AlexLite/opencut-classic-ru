@@ -16,6 +16,7 @@ import type { FrameRate } from "opencut-wasm";
 import { mediaTimeToSeconds } from "opencut-wasm";
 import { TICKS_PER_SECOND } from "@/wasm";
 import { frameRateToFloat } from "@/fps/utils";
+import { checkVideoEncoderCapability } from "@/media/webcodecs-capabilities";
 import type { RootNode } from "./nodes/root-node";
 import type { ExportFormat, ExportQuality } from "@/export";
 import { CanvasRenderer } from "./canvas-renderer";
@@ -46,6 +47,8 @@ export type SceneExporterEvents = {
 
 export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 	private renderer: CanvasRenderer;
+	private width: number;
+	private height: number;
 	private format: ExportFormat;
 	private quality: ExportQuality;
 	private shouldIncludeAudio: boolean;
@@ -63,12 +66,9 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 		audioBuffer,
 	}: ExportParams) {
 		super();
-		this.renderer = new CanvasRenderer({
-			width,
-			height,
-			fps,
-		});
-
+		this.renderer = new CanvasRenderer({ width, height, fps });
+		this.width = width;
+		this.height = height;
 		this.format = format;
 		this.quality = quality;
 		this.shouldIncludeAudio = shouldIncludeAudio ?? false;
@@ -99,9 +99,24 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 			target: new BufferTarget(),
 		});
 
+		const codec = this.format === "webm" ? "vp9" : "avc";
+		const webCodecsConfig: VideoEncoderConfig = {
+			codec: this.format === "webm" ? "vp09.00.10.08" : "avc1.640034",
+			width: this.width,
+			height: this.height,
+			framerate: fpsFloat,
+		};
+		const encoderCapability = await checkVideoEncoderCapability({
+			config: webCodecsConfig,
+		});
+		if (!encoderCapability.available) {
+			throw new Error("WebCodecs VideoEncoder is unavailable in this browser");
+		}
+
 		const videoSource = new CanvasSource(this.renderer.getOutputCanvas(), {
-			codec: this.format === "webm" ? "vp9" : "avc",
+			codec,
 			bitrate: qualityMap[this.quality],
+			hardwareAcceleration: "prefer-hardware",
 		});
 
 		output.addVideoTrack(videoSource, { frameRate: fpsFloat });
@@ -145,7 +160,6 @@ export class SceneExporter extends EventEmitter<SceneExporterEvents> {
 			const timeSeconds = mediaTimeToSeconds({ time: timeTicks });
 			await this.renderer.render({ node: rootNode, time: timeTicks });
 			await videoSource.add(timeSeconds, 1 / fpsFloat);
-
 			this.emit("progress", i / frameCount);
 		}
 
