@@ -17,6 +17,8 @@ export const en = {
 		loading: "Loading",
 		lightMode: "Light mode",
 		darkMode: "Dark mode",
+		dragToAdjustValue: "Drag to adjust value",
+		resetToDefault: "Reset to default",
 	},
 	language: {
 		label: "Language",
