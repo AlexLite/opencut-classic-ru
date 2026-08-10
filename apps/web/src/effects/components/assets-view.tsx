@@ -8,12 +8,14 @@ import { effectPreviewService } from "@/services/renderer/effect-preview";
 import { useEditor } from "@/editor/use-editor";
 import { buildEffectElement } from "@/timeline/element-utils";
 import type { EffectDefinition } from "@/effects/types";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function EffectsView() {
 	const effects = effectsRegistry.getAll();
+	const { assetsT } = useI18n();
 
 	return (
-		<PanelView title="Effects">
+		<PanelView title={assetsT.effects.title}>
 			<EffectsGrid effects={effects} />
 		</PanelView>
 	);
@@ -55,11 +57,15 @@ function EffectPreviewCanvas({ effectType }: { effectType: string }) {
 
 function EffectItem({ effect }: { effect: EffectDefinition }) {
 	const editor = useEditor();
+	const { assetsT } = useI18n();
+	const effectNames = assetsT.effects.names as Record<string, string>;
+	const localizedName = effectNames[effect.type] ?? effect.name;
 
 	const handleAddToTimeline = useCallback(() => {
 		const currentTime = editor.playback.getCurrentTime();
 		const element = buildEffectElement({
 			effectType: effect.type,
+			name: localizedName,
 			startTime: currentTime,
 		});
 
@@ -67,17 +73,17 @@ function EffectItem({ effect }: { effect: EffectDefinition }) {
 			placement: { mode: "auto", trackType: "effect" },
 			element,
 		});
-	}, [editor, effect.type]);
+	}, [editor, effect.type, localizedName]);
 
 	const preview = <EffectPreviewCanvas effectType={effect.type} />;
 
 	return (
 		<DraggableItem
-			name={effect.name}
+			name={localizedName}
 			preview={preview}
 			dragData={{
 				id: effect.type,
-				name: effect.name,
+				name: localizedName,
 				type: "effect",
 				effectType: effect.type,
 				targetElementTypes: EFFECT_TARGET_ELEMENT_TYPES,
