@@ -76,4 +76,35 @@ export const assetsRu = {
 			diamond: "Ромб",
 		},
 	},
+	captions: {
+		title: "Субтитры",
+		import: "Импорт",
+		language: "Язык",
+		selectLanguage: "Выберите язык",
+		autoDetect: "Определять автоматически",
+		generateTranscript: "Создать субтитры",
+		steps: {
+			loadingModelPrefix: "Загрузка модели ",
+			transcribing: "Распознавание речи...",
+			extractingAudio: "Извлечение аудио...",
+			preparingAudio: "Подготовка аудио...",
+			generatingCaptions: "Создание субтитров...",
+			readingSubtitle: "Чтение файла субтитров...",
+			importingSubtitles: "Импорт субтитров...",
+		},
+		errors: {
+			noCaptions: "Субтитры не были созданы",
+			unexpected: "Произошла непредвиденная ошибка",
+			noValidCues: "В файле не найдено корректных реплик субтитров",
+			unsupportedFormat: "Неподдерживаемый формат субтитров",
+		},
+		warnings: {
+			importedPrefix: "Импортировано реплик: ",
+			importedMiddle: ". Пропущено повреждённых реплик: ",
+			importedSuffix: ".",
+		},
+		diagnostics: {
+			noAudio: "Аудио не обнаружено. Сначала добавьте на таймлайн клип со звуком.",
+		},
+	},
 } satisfies TranslationShape<typeof assetsEn>;
