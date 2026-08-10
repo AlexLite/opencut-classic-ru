@@ -6,6 +6,8 @@ import { assetsEn } from "./locales/en/assets";
 import { assetsRu } from "./locales/ru/assets";
 import { timelineEn } from "./locales/en/timeline";
 import { timelineRu } from "./locales/ru/timeline";
+import { previewEn } from "./locales/en/preview";
+import { previewRu } from "./locales/ru/preview";
 import { useLocaleStore } from "./store";
 import type { Locale, TranslationShape } from "./types";
 
@@ -38,6 +40,14 @@ export const timelineDictionaries: Record<
 	ru: timelineRu,
 };
 
+export const previewDictionaries: Record<
+	Locale,
+	TranslationShape<typeof previewEn>
+> = {
+	en: previewEn,
+	ru: previewRu,
+};
+
 export const intlLocales: Record<Locale, string> = {
 	en: "en-US",
 	ru: "ru-RU",
@@ -51,6 +61,7 @@ export function getCurrentI18n() {
 		editorT: editorDictionaries[locale] ?? editorEn,
 		assetsT: assetDictionaries[locale] ?? assetsEn,
 		timelineT: timelineDictionaries[locale] ?? timelineEn,
+		previewT: previewDictionaries[locale] ?? previewEn,
 		intlLocale: intlLocales[locale] ?? intlLocales.en,
 	};
 }
