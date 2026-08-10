@@ -26,6 +26,10 @@ export const timelineEn = {
 		mute: "Mute track",
 		unmute: "Unmute track",
 	},
+	audio: {
+		adjustClipVolume: "Drag to adjust clip volume",
+		decibelsShort: "dB",
+	},
 	bookmarks: {
 		ruler: "Timeline ruler",
 		bookmarkAt: "Bookmark at",
