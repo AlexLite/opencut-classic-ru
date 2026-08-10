@@ -6,9 +6,11 @@ import { editorEn } from "./locales/en/editor";
 import { assetsEn } from "./locales/en/assets";
 import { timelineEn } from "./locales/en/timeline";
 import { previewEn } from "./locales/en/preview";
+import { changelogEn } from "./locales/en/changelog";
 import { useLocaleStore } from "./store";
 import {
 	assetDictionaries,
+	changelogDictionaries,
 	dictionaries,
 	editorDictionaries,
 	intlLocales,
@@ -31,6 +33,7 @@ export function useI18n() {
 	const assetsT = assetDictionaries[locale] ?? assetsEn;
 	const timelineT = timelineDictionaries[locale] ?? timelineEn;
 	const previewT = previewDictionaries[locale] ?? previewEn;
+	const changelogT = changelogDictionaries[locale] ?? changelogEn;
 	const intlLocale = intlLocales[locale] ?? intlLocales.en;
 	const pluralRules = new Intl.PluralRules(intlLocale);
 
@@ -64,6 +67,7 @@ export function useI18n() {
 		assetsT,
 		timelineT,
 		previewT,
+		changelogT,
 		intlLocale,
 		formatDate,
 		formatNumber,
