@@ -17,9 +17,14 @@ import { getMediaProxyMessages } from "@/i18n/media-proxy";
 function getProxyFailureMessage(code: LocalProxyFailureCode): string {
 	const messages = getMediaProxyMessages();
 	if (code === "ffmpeg-load-failed") return messages.loadFailed;
+	if (code === "input-too-large") return messages.inputTooLarge;
 	if (code === "out-of-memory") return messages.memoryFailed;
 	if (code === "worker-unavailable") return messages.workerUnavailable;
 	return messages.transcodeFailed;
+}
+
+function isProxyFailureRetryable(code: LocalProxyFailureCode): boolean {
+	return code !== "input-too-large";
 }
 
 export class MediaManager {
@@ -72,12 +77,17 @@ export class MediaManager {
 		const asset = this.assets.find((item) => item.id === mediaId);
 		if (!asset?.proxyFallbackFailure) return;
 		const messages = getMediaProxyMessages();
+		const failureCode = asset.proxyFallbackFailure;
 		toast.error(messages.failedTitle, {
-			description: getProxyFailureMessage(asset.proxyFallbackFailure),
-			action: {
-				label: messages.retry,
-				onClick: () => void this.retryVideoProxy({ mediaId }),
-			},
+			description: getProxyFailureMessage(failureCode),
+			...(isProxyFailureRetryable(failureCode)
+				? {
+						action: {
+							label: messages.retry,
+							onClick: () => void this.retryVideoProxy({ mediaId }),
+						},
+					}
+				: {}),
 		});
 	}
 
@@ -121,10 +131,14 @@ export class MediaManager {
 			toast.error(messages.failedTitle, {
 				id: toastId,
 				description: getProxyFailureMessage(normalized.code),
-				action: {
-					label: messages.retry,
-					onClick: () => void this.retryVideoProxy({ mediaId }),
-				},
+				...(isProxyFailureRetryable(normalized.code)
+					? {
+							action: {
+								label: messages.retry,
+								onClick: () => void this.retryVideoProxy({ mediaId }),
+							},
+						}
+					: {}),
 			});
 		}
 	}
