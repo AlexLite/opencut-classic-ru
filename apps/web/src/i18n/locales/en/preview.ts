@@ -13,6 +13,7 @@ export const previewEn = {
 	tryAgain: "Please try again",
 	zoom: "Preview zoom",
 	canvas: "Preview canvas",
+	editText: "Edit text",
 	overlays: {
 		bookmarkNotes: "Bookmark notes",
 		guides: "Guides",
