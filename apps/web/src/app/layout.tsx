@@ -9,7 +9,7 @@ import { BotIdClient } from "botid/client";
 import { webEnv } from "@/env/web";
 import { Inter } from "next/font/google";
 
-const siteFont = Inter({ subsets: ["latin"] });
+const siteFont = Inter({ subsets: ["latin", "cyrillic"] });
 
 export const metadata = baseMetaData;
 
@@ -26,7 +26,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="ru" suppressHydrationWarning>
 			<head>
 				<BotIdClient protect={protectedRoutes} />
 				{process.env.NODE_ENV === "development" && (
