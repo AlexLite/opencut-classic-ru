@@ -17,11 +17,18 @@ type WorkerResponse =
 	| { type: "complete"; id: string; blob: Blob }
 	| { type: "error"; id: string; code: string; message: string };
 
+type LocalWorkerScope = {
+	postMessage: (message: WorkerResponse) => void;
+	onmessage: ((event: MessageEvent<TranscodeRequest>) => void) | null;
+};
+
+const workerScope = self as unknown as LocalWorkerScope;
+
 let ffmpeg: FFmpeg | null = null;
 let loadedMode: "single" | "multi" | null = null;
 
 function post(message: WorkerResponse) {
-	self.postMessage(message);
+	workerScope.postMessage(message);
 }
 
 async function loadFfmpeg({ useMultithread }: { useMultithread: boolean }) {
@@ -59,7 +66,7 @@ async function loadFfmpeg({ useMultithread }: { useMultithread: boolean }) {
 	}
 }
 
-self.onmessage = async (event: MessageEvent<TranscodeRequest>) => {
+workerScope.onmessage = async (event: MessageEvent<TranscodeRequest>) => {
 	const request = event.data;
 	if (request?.type !== "transcode") return;
 
