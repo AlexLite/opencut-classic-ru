@@ -1,6 +1,10 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL } from "@ffmpeg/util";
 import { classifyLocalProxyError, LocalProxyError } from "./proxy-errors";
+import {
+	buildLocalVideoTranscodeArgs,
+	type LocalVideoTranscodePurpose,
+} from "./ffmpeg-transcode";
 
 const SINGLE_THREAD_CORE = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
 const MULTI_THREAD_CORE = "https://cdn.jsdelivr.net/npm/@ffmpeg/core-mt@0.12.10/dist/umd";
@@ -10,6 +14,7 @@ type TranscodeRequest = {
 	id: string;
 	file: File;
 	useMultithread: boolean;
+	purpose: LocalVideoTranscodePurpose;
 };
 
 type WorkerResponse =
@@ -71,7 +76,7 @@ workerScope.onmessage = async (event: MessageEvent<TranscodeRequest>) => {
 	if (request?.type !== "transcode") return;
 
 	const inputName = `input-${request.id}`;
-	const outputName = `proxy-${request.id}.mp4`;
+	const outputName = `${request.purpose}-${request.id}.mp4`;
 
 	try {
 		const instance = await loadFfmpeg({ useMultithread: request.useMultithread });
@@ -88,31 +93,13 @@ workerScope.onmessage = async (event: MessageEvent<TranscodeRequest>) => {
 				inputName,
 				new Uint8Array(await request.file.arrayBuffer()),
 			);
-			const exitCode = await instance.exec([
-				"-i",
-				inputName,
-				"-map",
-				"0:v:0",
-				"-map",
-				"0:a?",
-				"-vf",
-				"scale=w='min(1280,iw)':h='min(720,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",
-				"-c:v",
-				"libx264",
-				"-preset",
-				"veryfast",
-				"-crf",
-				"23",
-				"-pix_fmt",
-				"yuv420p",
-				"-c:a",
-				"aac",
-				"-b:a",
-				"128k",
-				"-movflags",
-				"+faststart",
-				outputName,
-			]);
+			const exitCode = await instance.exec(
+				buildLocalVideoTranscodeArgs({
+					inputName,
+					outputName,
+					purpose: request.purpose,
+				}),
+			);
 			if (exitCode !== 0) {
 				throw new Error(`ffmpeg.wasm exited with code ${exitCode}`);
 			}
