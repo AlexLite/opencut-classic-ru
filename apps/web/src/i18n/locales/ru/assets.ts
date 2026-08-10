@@ -102,6 +102,16 @@ export const assetsRu = {
 			importedPrefix: "Импортировано реплик: ",
 			importedMiddle: ". Пропущено повреждённых реплик: ",
 			importedSuffix: ".",
+			assInlineTagsPrefix: "Удалены неподдерживаемые встроенные теги ASS из реплик: ",
+			assInlineTagsSuffix: ".",
+			assEffectsPrefix: "Проигнорированы эффекты событий ASS в репликах: ",
+			assEffectsSuffix: ".",
+			assMissingStylesPrefix: "Для реплик без найденного ASS-стиля применено оформление по умолчанию: ",
+			assMissingStylesSuffix: ".",
+			assNonDialoguePrefix: "Проигнорировано событий ASS, не являющихся диалогами: ",
+			assNonDialogueSuffix: ".",
+			assUnsupportedStyles:
+				"Проигнорированы неподдерживаемые возможности стилей ASS: обводка, тень, поворот или масштабирование.",
 		},
 		diagnostics: {
 			noAudio: "Аудио не обнаружено. Сначала добавьте на таймлайн клип со звуком.",
