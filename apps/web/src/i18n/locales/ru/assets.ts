@@ -12,6 +12,9 @@ export const assetsRu = {
 		names: {
 			blur: "Размытие",
 		},
+		paramLabels: {
+			intensity: "Интенсивность",
+		},
 	},
 	stickers: {
 		searchPlaceholder: "Поиск...",
