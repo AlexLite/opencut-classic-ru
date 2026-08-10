@@ -17,7 +17,7 @@ export interface LocalVideoRenderMezzanineResult {
 	file: File;
 }
 
-const MAX_FFMPEG_WASM_INPUT_BYTES = 2 * 1024 * 1024 * 1024;
+const MAX_FFMPEG_WASM_INPUT_BYTES = 2_000_000_000;
 
 type WorkerResponse =
 	| { type: "progress"; id: string; progress: number }
