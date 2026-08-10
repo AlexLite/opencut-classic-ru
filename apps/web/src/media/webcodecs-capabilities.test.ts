@@ -2,9 +2,11 @@ import { afterEach, describe, expect, test } from "bun:test";
 import {
 	canUseThreadedFfmpeg,
 	checkVideoDecoderCapability,
+	checkVideoEncoderCapability,
 } from "./webcodecs-capabilities";
 
 const originalVideoDecoder = globalThis.VideoDecoder;
+const originalVideoEncoder = globalThis.VideoEncoder;
 const originalCrossOriginIsolated = globalThis.crossOriginIsolated;
 const originalSharedArrayBuffer = globalThis.SharedArrayBuffer;
 
@@ -31,6 +33,29 @@ function installVideoDecoderMock({
 	});
 }
 
+function installVideoEncoderMock({
+	hardwareSupported,
+	softwareSupported,
+}: {
+	hardwareSupported: boolean;
+	softwareSupported: boolean;
+}) {
+	class VideoEncoderMock {
+		static async isConfigSupported(config: VideoEncoderConfig) {
+			const supported =
+				config.hardwareAcceleration === "prefer-hardware"
+					? hardwareSupported
+					: softwareSupported;
+			return { supported, config };
+		}
+	}
+
+	Object.defineProperty(globalThis, "VideoEncoder", {
+		configurable: true,
+		value: VideoEncoderMock,
+	});
+}
+
 afterEach(() => {
 	if (originalVideoDecoder === undefined) {
 		Reflect.deleteProperty(globalThis, "VideoDecoder");
@@ -38,6 +63,14 @@ afterEach(() => {
 		Object.defineProperty(globalThis, "VideoDecoder", {
 			configurable: true,
 			value: originalVideoDecoder,
+		});
+	}
+	if (originalVideoEncoder === undefined) {
+		Reflect.deleteProperty(globalThis, "VideoEncoder");
+	} else {
+		Object.defineProperty(globalThis, "VideoEncoder", {
+			configurable: true,
+			value: originalVideoEncoder,
 		});
 	}
 
@@ -100,6 +133,36 @@ describe("WebCodecs decoder capability", () => {
 			supported: false,
 			reason: "webcodecs-unavailable",
 		});
+	});
+});
+
+describe("WebCodecs encoder capability", () => {
+	test("prefers hardware when the requested config is supported", async () => {
+		installVideoEncoderMock({ hardwareSupported: true, softwareSupported: true });
+		const result = await checkVideoEncoderCapability({
+			config: {
+				codec: "avc1.640034",
+				width: 1920,
+				height: 1080,
+				framerate: 30,
+			},
+		});
+		expect(result.supported).toBe(true);
+		expect(result.hardwareAcceleration).toBe("prefer-hardware");
+	});
+
+	test("uses no-preference when hardware config is rejected", async () => {
+		installVideoEncoderMock({ hardwareSupported: false, softwareSupported: true });
+		const result = await checkVideoEncoderCapability({
+			config: {
+				codec: "avc1.640034",
+				width: 1920,
+				height: 1080,
+				framerate: 30,
+			},
+		});
+		expect(result.supported).toBe(true);
+		expect(result.hardwareAcceleration).toBe("no-preference");
 	});
 });
 
