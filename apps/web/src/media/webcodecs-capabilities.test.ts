@@ -61,6 +61,18 @@ describe("WebCodecs decoder capability", () => {
 		expect(result.hardwareAcceleration).toBe("prefer-hardware");
 	});
 
+	test("keeps exact config support authoritative over non-standard type support", async () => {
+		installVideoDecoderMock({
+			supportedCodecs: new Set(["avc1.640028"]),
+			typeSupport: false,
+		});
+		const result = await checkVideoDecoderCapability({
+			config: { codec: "avc1.640028", codedWidth: 1920, codedHeight: 1080 },
+		});
+		expect(result.supported).toBe(true);
+		expect(result.reason).toBe("supported");
+	});
+
 	test("AVC/H.264 unsupported", async () => {
 		installVideoDecoderMock({ supportedCodecs: new Set() });
 		const result = await checkVideoDecoderCapability({
