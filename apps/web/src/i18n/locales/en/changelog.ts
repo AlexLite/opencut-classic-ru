@@ -2,6 +2,9 @@ export const changelogEn = {
 	page: {
 		title: "Changelog",
 		description: "See what's new in OpenCut",
+		allReleases: "All releases",
+		older: "Older",
+		newer: "Newer",
 	},
 	dismiss: "Dismiss",
 	seeFullChangelog: "See full changelog",
