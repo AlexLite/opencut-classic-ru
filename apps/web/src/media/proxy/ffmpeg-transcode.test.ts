@@ -14,11 +14,12 @@ describe("local ffmpeg transcode profiles", () => {
 		expect(args).toContain("libx264");
 		expect(args).toContain("yuv420p");
 		expect(args).toContain("avc1");
+		expect(args).toContain("aac");
 		expect(args).toContain("128k");
 		expect(args).toContain("+faststart");
 	});
 
-	test("render keeps source content size and uses a higher quality mezzanine", () => {
+	test("render keeps source content size and omits redundant audio", () => {
 		const args = buildLocalVideoTranscodeArgs({
 			inputName: "input.mov",
 			outputName: "render.mp4",
@@ -32,7 +33,9 @@ describe("local ffmpeg transcode profiles", () => {
 		expect(args).toContain("libx264");
 		expect(args).toContain("yuv420p");
 		expect(args).toContain("high");
-		expect(args).toContain("192k");
+		expect(args).toContain("-an");
+		expect(args).not.toContain("-c:a");
+		expect(args).not.toContain("192k");
 		expect(args[args.indexOf("-crf") + 1]).toBe("18");
 	});
 });
