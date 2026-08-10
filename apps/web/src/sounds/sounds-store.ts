@@ -40,7 +40,7 @@ interface SoundsStore {
 	setSearchError: ({ error }: { error: string | null }) => void;
 	setLastSearchQuery: ({ query }: { query: string }) => void;
 	setScrollPosition: ({ position }: { position: number }) => void;
-	setCurrentPage: number extends never ? never : ({ page }: { page: number }) => void;
+	setCurrentPage: ({ page }: { page: number }) => void;
 	setHasNextPage: ({ hasNext }: { hasNext: boolean }) => void;
 	setTotalCount: ({ count }: { count: number }) => void;
 	setLoadingMore: ({ loading }: { loading: boolean }) => void;
