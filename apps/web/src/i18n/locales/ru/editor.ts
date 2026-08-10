@@ -103,6 +103,15 @@ export const editorRu = {
 		clickToEdit: "Нажмите, чтобы изменить сочетание",
 		conflictKeyPrefix: "Клавиша",
 		conflictBoundTo: "уже назначена действию",
+		keyLabels: {
+			shift: "Shift",
+			space: "Пробел",
+			home: "Home",
+			enter: "Enter",
+			end: "End",
+			delete: "Delete",
+			backspace: "Backspace",
+		},
 		categories: {
 			playback: "Воспроизведение",
 			navigation: "Навигация",
