@@ -4,9 +4,10 @@ export const changelogEn = {
 	copyAsMarkdown: "Copy as Markdown",
 	copied: "Copied",
 	sections: {
-		features: "Features",
-		improvements: "Improvements",
-		bugFixes: "Bug Fixes",
-		chores: "Chores",
+		new: "Features",
+		improved: "Improvements",
+		fixed: "Fixes",
+		breaking: "Breaking Changes",
+		technical: "Technical details",
 	},
 } as const;
