@@ -29,6 +29,9 @@ export const uiRu = {
 		showPassword: "Показать пароль",
 		hidePassword: "Скрыть пароль",
 	},
+	selection: {
+		selectableItems: "Выбираемые элементы",
+	},
 	breadcrumb: {
 		label: "Навигационная цепочка",
 		more: "Ещё",
