@@ -91,13 +91,19 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
 
 	setTopSoundEffects: ({ sounds }) => set({ topSoundEffects: sounds }),
 	setLoading: ({ loading }) => set({ isLoading: loading }),
-	setError: ({ error }) => set({ error }),
+	setError: ({ error }) =>
+		set({
+			error: error ? getCurrentI18n().editorT.sounds.loadFailed : null,
+		}),
 	setHasLoaded: ({ loaded }) => set({ hasLoaded: loaded }),
 	setSearchQuery: ({ query }) => set({ searchQuery: query }),
 	setSearchResults: ({ results }) =>
 		set({ searchResults: results, currentPage: 1 }),
 	setSearching: ({ searching }) => set({ isSearching: searching }),
-	setSearchError: ({ error }) => set({ searchError: error }),
+	setSearchError: ({ error }) =>
+		set({
+			searchError: error ? getCurrentI18n().editorT.sounds.loadFailed : null,
+		}),
 	setLastSearchQuery: ({ query }) => set({ lastSearchQuery: query }),
 	setScrollPosition: ({ position }) => set({ scrollPosition: position }),
 	setCurrentPage: ({ page }) => set({ currentPage: page }),
