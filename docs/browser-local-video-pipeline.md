@@ -21,10 +21,10 @@ import File
   -> cache preview proxy in OPFS using a fingerprint of the original file
   -> preview uses proxy only
   -> export re-checks the original stream when capability is unknown/unsupported
-  -> if original decode is still unsupported, create a temporary full-resolution local render mezzanine
+  -> if original decode is still unsupported, create a temporary full-resolution local video render mezzanine
        -> H.264/AVC High, 8-bit yuv420p
        -> source content resolution is preserved (odd dimensions may receive <=1 px padding)
-       -> AAC audio
+       -> video only; final audio continues to come from the original source
        -> MP4 faststart
        -> verify the generated stream with VideoDecoder.isConfigSupported()
   -> render effects locally
@@ -52,12 +52,12 @@ The decoder mode returned by the capability check is also passed to the real Med
 
 The preview proxy and the export fallback intentionally have different purposes:
 
-- **preview proxy**: at most 1280x720, CRF 23, cached in OPFS, used only for interactive preview;
-- **render mezzanine**: source content resolution, CRF 18, temporary, created only when the original cannot be decoded for final rendering.
+- **preview proxy**: at most 1280x720, CRF 23, H.264/AAC MP4, cached in OPFS, used only for interactive preview;
+- **render mezzanine**: source content resolution, CRF 18, video-only H.264 MP4, temporary, created only when the original cannot be decoded for final rendering.
 
 The render mezzanine does not downscale the video. `yuv420p` requires even coded dimensions, so an odd source width/height is padded by at most one pixel instead of being resized.
 
-The 720p preview proxy is never used as the master source for final export. If the original stream becomes decodable (for example after reopening the project on a different browser/device), export uses the original and skips the render mezzanine.
+The 720p preview proxy is never used as the master source for final export. If the original stream becomes decodable (for example after reopening the project on a different browser/device), export uses the original and skips the render mezzanine. When a render mezzanine is required, source audio is still decoded from the original media asset, avoiding an unnecessary AAC transcode in the temporary render copy.
 
 Temporary render object URLs are revoked after export. Video decoder cache entries for affected media IDs are cleared before and after rendering so an existing preview decoder cannot be accidentally reused for the full-resolution render source.
 
@@ -86,7 +86,7 @@ The current fallback uses ffmpeg.wasm core `0.12.10`:
 
 The official ffmpeg.wasm example describes the core download as roughly 31 MB. Multi-thread mode requires `SharedArrayBuffer`, and the implementation enables it only when both `crossOriginIsolated === true` and `SharedArrayBuffer` are available.
 
-The current ffmpeg.wasm WebAssembly core has a documented **2 GB input-file hard limit**. Files at or above 2 GB are rejected before starting the Worker with a clear localized message; the original is still imported locally. Retrying cannot change this limit, so the UI intentionally does not show a retry action for this particular failure.
+The current ffmpeg.wasm WebAssembly core has a documented **2 GB input-file hard limit**. The implementation treats this conservatively as `2_000_000_000` bytes: files at or above that size are rejected before starting the Worker with a clear localized message, while the original is still imported locally. Retrying cannot change this limit, so the UI intentionally does not show a retry action for this particular failure.
 
 The core files are downloaded from jsDelivr at runtime. Deployments with a strict CSP or offline requirements should self-host the same pinned core files and update the Worker base URLs.
 
@@ -140,7 +140,7 @@ Use at least these fixtures:
 
 1. H.264/AVC 8-bit yuv420p that the browser supports: no proxy; preview and export use the original.
 2. H.264/AVC profile/parameters rejected by `VideoDecoder.isConfigSupported()`: import succeeds; exact AVC message is shown; local preview proxy progress reaches completion; preview uses the proxy.
-3. Export the fixture from step 2: export re-checks the original, creates a full-resolution local render mezzanine, verifies it, renders effects, then encodes/muxes locally.
+3. Export the fixture from step 2: export re-checks the original, creates a full-resolution video-only local render mezzanine, verifies it, keeps audio from the original, renders effects, then encodes/muxes locally.
 4. HEVC stream rejected by the browser: import succeeds; UI explains that a local H.264/AVC preview copy is being created; export uses a full-resolution local H.264 render fallback if the original remains undecodable.
 5. Force ffmpeg core loading failure (offline/CSP): original stays imported; localized retry action is available for preview and export reports a localized render-fallback failure when applicable.
 6. Force low-memory/large-file conditions: warning is shown and the UI remains responsive.
