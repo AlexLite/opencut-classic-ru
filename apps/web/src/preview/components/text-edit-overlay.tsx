@@ -5,9 +5,7 @@ import { usePreviewViewport } from "@/preview/components/preview-viewport";
 import { useEditor } from "@/editor/use-editor";
 import type { TextElement } from "@/timeline";
 import { DEFAULTS } from "@/timeline/defaults";
-import {
-	getElementLocalTime,
-} from "@/animation";
+import { getElementLocalTime } from "@/animation";
 import { resolveTransformAtTime } from "@/rendering/animation-values";
 import { buildTransformFromParams } from "@/rendering";
 import { resolveTextLayout } from "@/text/primitives";
@@ -15,6 +13,7 @@ import {
 	buildTextBackgroundFromElement,
 	buildTextLayoutParamsFromElement,
 } from "@/text/measure-element";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function TextEditOverlay({
 	trackId,
@@ -29,6 +28,7 @@ export function TextEditOverlay({
 }) {
 	const editor = useEditor();
 	const viewport = usePreviewViewport();
+	const { previewT } = useI18n();
 	const divRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -122,7 +122,7 @@ export function TextEditOverlay({
 				suppressContentEditableWarning
 				tabIndex={0}
 				role="textbox"
-				aria-label="Edit text"
+				aria-label={previewT.editText}
 				className="cursor-text select-text outline-none whitespace-pre"
 				style={{
 					fontSize: resolvedTextLayout.scaledFontSize,
