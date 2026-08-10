@@ -21,4 +21,7 @@ export const mediaProxyEn = {
 		"The local H.264/AVC preview conversion failed. The original file was still imported and was not uploaded anywhere.",
 	retry: "Retry",
 	retrying: "Retrying local preview copy",
+	preparingExport: "Preparing compatible local source for export",
+	renderFallbackFailed:
+		"Could not create a compatible full-resolution local video source for export.",
 } as const;
