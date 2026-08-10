@@ -13,6 +13,8 @@ export const mediaProxyEn = {
 	failedTitle: "Could not create local preview copy",
 	loadFailed:
 		"ffmpeg.wasm could not be loaded. Check the network or content-security settings and retry.",
+	inputTooLarge:
+		"This file is 2 GB or larger, which exceeds the current ffmpeg.wasm input limit. The original file was still imported and was not uploaded anywhere.",
 	memoryFailed:
 		"The browser ran out of memory while creating the local preview copy. Close memory-heavy tabs or use a smaller file, then retry.",
 	workerUnavailable:
