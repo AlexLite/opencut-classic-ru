@@ -107,7 +107,7 @@ export async function checkVideoDecoderCapability({
 			available: true,
 			supported: true,
 			hardwareAcceleration: "prefer-hardware",
-			config: hardware.config,
+			config: hardware.config ?? null,
 			reason: "supported",
 		};
 	}
@@ -122,7 +122,7 @@ export async function checkVideoDecoderCapability({
 			available: true,
 			supported: true,
 			hardwareAcceleration: "no-preference",
-			config: fallback.config,
+			config: fallback.config ?? null,
 			reason: "supported",
 		};
 	}
@@ -186,7 +186,7 @@ export async function checkVideoEncoderCapability({
 			available: true,
 			supported: true,
 			hardwareAcceleration: "prefer-hardware",
-			config: hardware.config,
+			config: hardware.config ?? null,
 			reason: "supported",
 		};
 	}
@@ -201,7 +201,7 @@ export async function checkVideoEncoderCapability({
 			available: true,
 			supported: true,
 			hardwareAcceleration: "no-preference",
-			config: fallback.config,
+			config: fallback.config ?? null,
 			reason: "supported",
 		};
 	}
@@ -211,7 +211,10 @@ export async function checkVideoEncoderCapability({
 		supported: false,
 		hardwareAcceleration: null,
 		config: fallback?.config ?? hardware?.config ?? null,
-		reason: hardware === null && fallback === null ? "invalid-config" : "config-unsupported",
+		reason:
+			hardware === null && fallback === null
+				? "invalid-config"
+				: "config-unsupported",
 	};
 }
 
