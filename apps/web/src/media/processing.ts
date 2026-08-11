@@ -12,7 +12,7 @@ import { classifyLocalProxyError } from "./proxy/proxy-errors";
 import { inspectVideoCodec, type VideoCodecFamily } from "./codec-info";
 import { resolveImportDecodability } from "./import-decode-decision";
 
-export interface ProcessedMediaAsset extends Omit<MediaAsset, "id"> {}
+export type ProcessedMediaAsset = Omit<MediaAsset, "id">;
 
 const LARGE_PROXY_FILE_BYTES = 750 * 1024 * 1024;
 
@@ -277,9 +277,9 @@ export async function processMediaAssets({
 
 const getMediaDuration = ({ file }: { file: File }): Promise<number> => {
 	return new Promise((resolve, reject) => {
-		const element = document.createElement(
-			file.type.startsWith("video/") ? "video" : "audio",
-		) as HTMLVideoElement;
+		const element = file.type.startsWith("video/")
+			? document.createElement("video")
+			: document.createElement("audio");
 		const objectUrl = URL.createObjectURL(file);
 
 		element.addEventListener("loadedmetadata", () => {
