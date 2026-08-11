@@ -9,6 +9,7 @@ import { BasePage } from "@/app/base-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useI18n } from "@/i18n/use-i18n";
 import { cn } from "@/utils/ui";
 
 function downloadAsset(src: string) {
@@ -24,8 +25,6 @@ async function copyAsset(src: string) {
 	const text = await res.text();
 	await navigator.clipboard.writeText(text);
 }
-
-const ALL_ASSETS = () => ASSET_SECTIONS.flatMap((s) => s.assets);
 
 type AssetTheme = "dark" | "light" | "icon";
 
@@ -44,75 +43,82 @@ interface AssetSection {
 	assets: AssetVariant[];
 }
 
-const ASSET_SECTIONS: AssetSection[] = [
-	{
-		title: "Symbol",
-		description:
-			"Use the symbol on its own when the OpenCut name is already present nearby or space is limited.",
-		cols: "2",
-		assets: [
-			{
-				src: "/logos/opencut/symbol.svg",
-				theme: "dark",
-				label: "Symbol",
-				width: 400,
-				height: 400,
-			},
-			{
-				src: "/logos/opencut/symbol-light.svg",
-				theme: "light",
-				label: "Symbol",
-				width: 400,
-				height: 400,
-			},
-		],
-	},
-	{
-		title: "Lockup",
-		description:
-			"The full lockup combines the symbol and wordmark. Prefer this in most contexts where you have enough horizontal space.",
-		cols: "2",
-		assets: [
-			{
-				src: "/logos/opencut/logo.svg",
-				theme: "dark",
-				label: "Logo",
-				width: 1809,
-				height: 400,
-			},
-			{
-				src: "/logos/opencut/logo-light.svg",
-				theme: "light",
-				label: "Logo",
-				width: 1809,
-				height: 400,
-			},
-			{
-				src: "/logos/opencut/text.svg",
-				theme: "dark",
-				label: "Text",
-				width: 1760,
-				height: 400,
-			},
-			{
-				src: "/logos/opencut/text-light.svg",
-				theme: "light",
-				label: "Text",
-				width: 1760,
-				height: 400,
-			},
-		],
-	},
-];
-
 export default function BrandPage() {
+	const { siteT } = useI18n();
+	const brandT = siteT.brand;
+	const assetSections: AssetSection[] = [
+		{
+			title: brandT.symbolTitle,
+			description: brandT.symbolDescription,
+			cols: "2",
+			assets: [
+				{
+					src: "/logos/opencut/symbol.svg",
+					theme: "dark",
+					label: brandT.symbolLabel,
+					width: 400,
+					height: 400,
+				},
+				{
+					src: "/logos/opencut/symbol-light.svg",
+					theme: "light",
+					label: brandT.symbolLabel,
+					width: 400,
+					height: 400,
+				},
+			],
+		},
+		{
+			title: brandT.lockupTitle,
+			description: brandT.lockupDescription,
+			cols: "2",
+			assets: [
+				{
+					src: "/logos/opencut/logo.svg",
+					theme: "dark",
+					label: brandT.logoLabel,
+					width: 1809,
+					height: 400,
+				},
+				{
+					src: "/logos/opencut/logo-light.svg",
+					theme: "light",
+					label: brandT.logoLabel,
+					width: 1809,
+					height: 400,
+				},
+				{
+					src: "/logos/opencut/text.svg",
+					theme: "dark",
+					label: brandT.textLabel,
+					width: 1760,
+					height: 400,
+				},
+				{
+					src: "/logos/opencut/text-light.svg",
+					theme: "light",
+					label: brandT.textLabel,
+					width: 1760,
+					height: 400,
+				},
+			],
+		},
+	];
+	const allAssets = assetSections.flatMap((section) => section.assets);
+	const notAllowed = [
+		brandT.notAllowed.productName,
+		brandT.notAllowed.endorsement,
+		brandT.notAllowed.commercial,
+		brandT.notAllowed.modify,
+	];
+
 	return (
 		<BasePage
 			maxWidth="6xl"
-			title="Brand"
+			title={brandT.title}
 			description={
 				<>
-					Download OpenCut brand assets for use in your projects.{" "}
+					{brandT.description}{" "}
 					<Link
 						href="#guidelines"
 						className="underline underline-offset-4"
@@ -122,7 +128,7 @@ export default function BrandPage() {
 								?.scrollIntoView({ behavior: "smooth" })
 						}
 					>
-						Read the brand guidelines.
+						{brandT.readGuidelines}
 					</Link>
 				</>
 			}
@@ -132,18 +138,18 @@ export default function BrandPage() {
 					size="lg"
 					className="mx-auto gap-2"
 					onClick={() => {
-						ALL_ASSETS().forEach((asset, i) => {
-							setTimeout(() => downloadAsset(asset.src), i * 200);
+						allAssets.forEach((asset, index) => {
+							setTimeout(() => downloadAsset(asset.src), index * 200);
 						});
 					}}
 				>
 					<Download />
-					Download all
+					{brandT.downloadAll}
 				</Button>
 			}
 		>
 			<div className="flex flex-col gap-10">
-				{ASSET_SECTIONS.map((section) => (
+				{assetSections.map((section) => (
 					<div key={section.title} className="flex flex-col gap-4">
 						<div className="flex flex-col gap-1">
 							<h2 className="font-semibold text-lg">{section.title}</h2>
@@ -171,33 +177,23 @@ export default function BrandPage() {
 
 			<div id="guidelines" className="flex flex-col gap-8 text-sm">
 				<div className="flex flex-col gap-3">
-					<h2 className="font-semibold text-lg">Usage</h2>
+					<h2 className="font-semibold text-lg">{brandT.usageTitle}</h2>
 					<p className="text-muted-foreground text-base leading-relaxed">
-						OpenCut is open source — the code is free to use under its license.
-						That license does not cover the name or logo. You can say you use
-						OpenCut, that your project integrates with OpenCut, or that it was
-						built on top of OpenCut. You cannot name your product OpenCut, imply
-						we made or endorse your product, or use the marks commercially
-						without asking first. For anything unclear, reach out at{" "}
+						{brandT.usageBeforeEmail}{" "}
 						<Link
 							href="mailto:brand@opencut.app"
 							className="underline underline-offset-4"
 						>
 							brand@opencut.app
 						</Link>
-						.
+						{brandT.usageAfterEmail}
 					</p>
 				</div>
 
 				<div className="flex flex-col gap-3">
-					<h2 className="font-semibold text-lg">What&apos;s not allowed</h2>
+					<h2 className="font-semibold text-lg">{brandT.notAllowedTitle}</h2>
 					<ul className="text-muted-foreground text-base flex flex-col gap-2 leading-relaxed">
-						{[
-							"Using OpenCut in the name of your product, service, or domain.",
-							"Implying that OpenCut made, sponsors, or endorses your work.",
-							"Using the logo or name on merchandise or commercial marketing.",
-							"Modifying the marks.",
-						].map((item) => (
+						{notAllowed.map((item) => (
 							<li key={item} className="flex gap-2">
 								<span className="mt-0.5 shrink-0">-</span>
 								<span>{item}</span>
@@ -229,12 +225,15 @@ const CHECKER_STYLES: Record<"dark" | "light", CSSProperties> = {
 
 function AssetCard({ variant }: { variant: AssetVariant }) {
 	const [copied, setCopied] = useState(false);
+	const { siteT } = useI18n();
 
 	async function handleCopy() {
 		await copyAsset(variant.src);
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	}
+
+	const copyLabel = copied ? siteT.brand.assetCopied : siteT.brand.copyAsset;
 
 	return (
 		<Card
@@ -260,6 +259,8 @@ function AssetCard({ variant }: { variant: AssetVariant }) {
 				size="icon"
 				className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 size-9"
 				onClick={handleCopy}
+				aria-label={copyLabel}
+				title={copyLabel}
 			>
 				{copied ? <Check /> : <Copy />}
 			</Button>

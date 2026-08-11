@@ -1,49 +1,72 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/i18n/use-i18n";
 import { getSortedReleases } from "../utils";
 import type { Release } from "../utils";
 
 const STORAGE_KEY = "last-seen-version";
 
+function subscribeToClientState() {
+	return () => {};
+}
+
+function getClientSnapshot() {
+	return true;
+}
+
+function getServerSnapshot() {
+	return false;
+}
+
+function getUnseenRelease(): Release | null {
+	const latest = getSortedReleases()[0];
+	if (!latest) return null;
+
+	let storedVersion: string | null = null;
+	try {
+		storedVersion = localStorage.getItem(STORAGE_KEY);
+	} catch {
+		// localStorage unavailable
+	}
+
+	const isOutdated =
+		storedVersion === null ||
+		storedVersion.localeCompare(latest.version, undefined, {
+			numeric: true,
+		}) < 0;
+
+	// TODO(v0.4): revert to the standard "null = first-time visitor, record silently"
+	// path. The null case intentionally shows the card for this release so existing
+	// users who never had the key get the 0.3.0 announcement.
+	return isOutdated ? latest : null;
+}
+
 export function ChangelogNotification() {
-	const [release, setRelease] = useState<Release | null>(null);
+	const isClient = useSyncExternalStore(
+		subscribeToClientState,
+		getClientSnapshot,
+		getServerSnapshot,
+	);
+	const [dismissed, setDismissed] = useState(false);
+	const { changelogT } = useI18n();
+	const release = useMemo(
+		() => (isClient && !dismissed ? getUnseenRelease() : null),
+		[isClient, dismissed],
+	);
 
 	useEffect(() => {
-		const releases = getSortedReleases();
-		const latest = releases[0];
-		if (!latest) return;
-
-		let storedVersion: string | null = null;
+		if (!release) return;
 		try {
-			storedVersion = localStorage.getItem(STORAGE_KEY);
+			localStorage.setItem(STORAGE_KEY, release.version);
 		} catch {
 			// localStorage unavailable
 		}
-
-		const isOutdated =
-			storedVersion === null ||
-			storedVersion.localeCompare(latest.version, undefined, {
-				numeric: true,
-			}) < 0;
-
-		// TODO(v0.4): revert to the standard "null = first-time visitor, record silently"
-		// path. The null case intentionally shows the card for this release so existing
-		// users who never had the key get the 0.3.0 announcement.
-		if (!isOutdated) return;
-
-		try {
-			localStorage.setItem(STORAGE_KEY, latest.version);
-		} catch {
-			// ignore
-		}
-
-		setRelease(latest);
-	}, []);
+	}, [release]);
 
 	if (!release) return null;
 
@@ -62,8 +85,8 @@ export function ChangelogNotification() {
 					variant="ghost"
 					size="icon"
 					className="-mr-1 -mt-1 shrink-0"
-					onClick={() => setRelease(null)}
-					aria-label="Dismiss"
+					onClick={() => setDismissed(true)}
+					aria-label={changelogT.dismiss}
 				>
 					<HugeiconsIcon icon={Cancel01Icon} className="size-4" />
 				</Button>
@@ -77,8 +100,8 @@ export function ChangelogNotification() {
 
 			<div className="flex justify-end">
 				<Button asChild size="sm">
-					<Link href="/changelog" onClick={() => setRelease(null)}>
-						See full changelog
+					<Link href="/changelog" onClick={() => setDismissed(true)}>
+						{changelogT.seeFullChangelog}
 					</Link>
 				</Button>
 			</div>

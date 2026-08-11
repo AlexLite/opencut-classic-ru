@@ -20,6 +20,7 @@ import { syntaxUIGradients } from "@/data/colors/syntax-ui";
 import { useEditor } from "@/editor/use-editor";
 import { effectPreviewService } from "@/services/renderer/effect-preview";
 import { cn } from "@/utils/ui";
+import { useI18n } from "@/i18n/use-i18n";
 
 const BLUR_PREVIEW_UNIFORM_DIMENSIONS = {
 	width: 1920,
@@ -40,6 +41,7 @@ const BlurPreview = memo(
 		onSelect: () => void;
 	}) => {
 		const canvasRef = useRef<HTMLCanvasElement>(null);
+		const { t } = useI18n();
 
 		useEffect(() => {
 			const renderPreview = () => {
@@ -67,7 +69,7 @@ const BlurPreview = memo(
 				)}
 				onClick={onSelect}
 				type="button"
-				aria-label={`Select ${blur.label} blur`}
+				aria-label={`${t.settings.blur}: ${blur.label}`}
 			>
 				<canvas
 					ref={canvasRef}
@@ -99,6 +101,8 @@ const BackgroundPreviews = memo(
 		onSelect: (bg: string) => void;
 		useBackgroundColor?: boolean;
 	}) => {
+		const { t } = useI18n();
+
 		return useMemo(
 			() =>
 				backgrounds.map((bg) => (
@@ -122,7 +126,7 @@ const BackgroundPreviews = memo(
 						}
 						onClick={() => onSelect(bg)}
 						type="button"
-						aria-label={`Select background ${bg}`}
+						aria-label={`${t.settings.selectBackground}: ${bg}`}
 					/>
 				)),
 			[
@@ -131,6 +135,7 @@ const BackgroundPreviews = memo(
 				currentBackgroundColor,
 				onSelect,
 				useBackgroundColor,
+				t.settings.selectBackground,
 			],
 		);
 	},
@@ -149,6 +154,8 @@ function CustomColorPreview({
 	onPreview: (color: string) => void;
 	onCommit: (color: string) => void;
 }) {
+	const { t } = useI18n();
+
 	return (
 		<Popover>
 			<PopoverTrigger asChild>
@@ -158,7 +165,7 @@ function CustomColorPreview({
 						isSelected && "border-primary border-2",
 					)}
 					type="button"
-					aria-label="Pick a custom background color"
+					aria-label={t.settings.pickCustomBackgroundColor}
 				>
 					<span
 						className="absolute inset-0"
@@ -179,15 +186,32 @@ function CustomColorPreview({
 	);
 }
 
-const COLOR_SECTIONS = [
-	{ id: "colors", title: "Colors", backgrounds: colors, useBackgroundColor: true, showCustomPicker: true },
-	{ id: "pattern-craft", title: "Pattern craft", backgrounds: patternCraftGradients, showCustomPicker: false },
-	{ id: "syntax-ui", title: "Syntax UI", backgrounds: syntaxUIGradients, showCustomPicker: false },
-] as const;
-
 export function BackgroundContent() {
 	const editor = useEditor();
 	const activeProject = useEditor((e) => e.project.getActive());
+	const { t } = useI18n();
+
+	const colorSections = [
+		{
+			id: "colors",
+			title: t.settings.colors,
+			backgrounds: colors,
+			useBackgroundColor: true,
+			showCustomPicker: true,
+		},
+		{
+			id: "pattern-craft",
+			title: t.settings.patternCraft,
+			backgrounds: patternCraftGradients,
+			showCustomPicker: false,
+		},
+		{
+			id: "syntax-ui",
+			title: t.settings.syntaxUi,
+			backgrounds: syntaxUIGradients,
+			showCustomPicker: false,
+		},
+	] as const;
 
 	const handleBlurSelect = useCallback(
 		async (blurIntensity: number) => {
@@ -241,18 +265,29 @@ export function BackgroundContent() {
 		[commitBackgroundColor],
 	);
 
-	const blurPreviews = useMemo(
-		() =>
-			BACKGROUND_BLUR_INTENSITY_PRESETS.map((blur) => (
-				<BlurPreview
-					key={blur.value}
-					blur={blur}
-					isSelected={isBlurBackground && currentBlurIntensity === blur.value}
-					onSelect={() => handleBlurSelect(blur.value)}
-				/>
-			)),
-		[isBlurBackground, currentBlurIntensity, handleBlurSelect],
-	);
+	const blurPreviews = useMemo(() => {
+		const blurLabels: Record<number, string> = {
+			100: t.settings.blurLight,
+			200: t.settings.blurMedium,
+			500: t.settings.blurHeavy,
+		};
+
+		return BACKGROUND_BLUR_INTENSITY_PRESETS.map((blur) => (
+			<BlurPreview
+				key={blur.value}
+				blur={{ ...blur, label: blurLabels[blur.value] ?? blur.label }}
+				isSelected={isBlurBackground && currentBlurIntensity === blur.value}
+				onSelect={() => handleBlurSelect(blur.value)}
+			/>
+		));
+	}, [
+		isBlurBackground,
+		currentBlurIntensity,
+		handleBlurSelect,
+		t.settings.blurLight,
+		t.settings.blurMedium,
+		t.settings.blurHeavy,
+	]);
 
 	return (
 		<div className="flex flex-col">
@@ -263,13 +298,13 @@ export function BackgroundContent() {
 				showTopBorder={false}
 			>
 				<SectionHeader>
-					<SectionTitle>Blur</SectionTitle>
+					<SectionTitle>{t.settings.blur}</SectionTitle>
 				</SectionHeader>
 				<SectionContent>
 					<div className="flex flex-wrap gap-2">{blurPreviews}</div>
 				</SectionContent>
 			</Section>
-			{COLOR_SECTIONS.map((section) => (
+			{colorSections.map((section) => (
 				<Section
 					key={section.id}
 					collapsible

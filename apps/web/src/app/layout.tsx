@@ -9,7 +9,7 @@ import { BotIdClient } from "botid/client";
 import { webEnv } from "@/env/web";
 import { Inter } from "next/font/google";
 
-const siteFont = Inter({ subsets: ["latin"] });
+const siteFont = Inter({ subsets: ["latin", "cyrillic"] });
 
 export const metadata = baseMetaData;
 
@@ -26,7 +26,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="ru" suppressHydrationWarning>
 			<head>
 				<BotIdClient protect={protectedRoutes} />
 				{process.env.NODE_ENV === "development" && (
@@ -47,18 +47,20 @@ export default function RootLayout({
 				>
 					<TooltipProvider>
 						<Toaster />
-						<Script
-							src="https://cdn.databuddy.cc/databuddy.js"
-							strategy="afterInteractive"
-							async
-							data-client-id="UP-Wcoy5arxFeK7oyjMMZ"
-							data-disabled={webEnv.NODE_ENV === "development"}
-							data-track-attributes={false}
-							data-track-errors={true}
-							data-track-outgoing-links={false}
-							data-track-web-vitals={false}
-							data-track-sessions={false}
-						/>
+						<ChangelogNotification />
+						{webEnv.NEXT_PUBLIC_DATABUDDY_CLIENT_ID && (
+							<Script
+								src="https://cdn.databuddy.cc/databuddy.js"
+								strategy="afterInteractive"
+								async
+								data-client-id={webEnv.NEXT_PUBLIC_DATABUDDY_CLIENT_ID}
+								data-track-attributes={false}
+								data-track-errors={true}
+								data-track-outgoing-links={false}
+								data-track-web-vitals={false}
+								data-track-sessions={false}
+							/>
+						)}
 						{children}
 					</TooltipProvider>
 				</ThemeProvider>

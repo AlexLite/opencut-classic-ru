@@ -18,10 +18,11 @@ export function useFontAtlas({ open }: { open: boolean }) {
 	);
 
 	useEffect(() => {
-		if (!open || atlas) return;
+		if (!open || atlas || status !== "loading") return;
 
-		setStatus("loading");
-		loadFontAtlas().then((data) => {
+		let cancelled = false;
+		void loadFontAtlas().then((data) => {
+			if (cancelled) return;
 			if (data) {
 				setAtlas(data);
 				setStatus("idle");
@@ -29,12 +30,16 @@ export function useFontAtlas({ open }: { open: boolean }) {
 				setStatus("error");
 			}
 		});
-	}, [open, atlas]);
+
+		return () => {
+			cancelled = true;
+		};
+	}, [open, atlas, status]);
 
 	const retry = useCallback(() => {
 		clearFontAtlasCache();
 		setStatus("loading");
-		loadFontAtlas().then((data) => {
+		void loadFontAtlas().then((data) => {
 			if (data) {
 				setAtlas(data);
 				setStatus("idle");

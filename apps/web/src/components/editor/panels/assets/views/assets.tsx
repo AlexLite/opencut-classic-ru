@@ -58,11 +58,13 @@ import {
 	Video01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function MediaView() {
 	const editor = useEditor();
 	const mediaFiles = useEditor((e) => e.media.getAssets());
 	const activeProject = useEditor((e) => e.project.getActive());
+	const { editorT } = useI18n();
 
 	const {
 		mediaViewMode,
@@ -80,7 +82,7 @@ export function MediaView() {
 	const processFiles = async ({ files }: { files: File[] }) => {
 		if (!files || files.length === 0) return;
 		if (!activeProject) {
-			toast.error("No active project");
+			toast.error(editorT.media.noActiveProject);
 			return;
 		}
 
@@ -192,7 +194,7 @@ export function MediaView() {
 			<input {...fileInputProps} />
 
 			<PanelView
-				title="Assets"
+				title={editorT.media.title}
 				actions={
 					<MediaActions
 						mediaViewMode={mediaViewMode}
@@ -217,7 +219,7 @@ export function MediaView() {
 					/>
 				) : (
 					<SelectableSurface
-						ariaLabel="Assets"
+						ariaLabel={editorT.media.title}
 						orderedIds={orderedMediaIds}
 						revealId={highlightMediaId}
 						onRevealComplete={clearHighlight}
@@ -316,15 +318,18 @@ function MediaItemWithContextMenu({
 	}) => void;
 }) {
 	const { isSelected, selectedIds } = useSelection();
+	const { t, editorT } = useI18n();
 	const idsToDelete = isSelected(item.id) ? selectedIds : [item.id];
 	const deleteLabel =
-		idsToDelete.length > 1 ? `Delete ${idsToDelete.length} items` : "Delete";
+		idsToDelete.length > 1
+			? `${editorT.media.deleteSelected}: ${idsToDelete.length}`
+			: t.common.delete;
 
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
 			<ContextMenuContent>
-				<ContextMenuItem>Export clips</ContextMenuItem>
+				<ContextMenuItem>{editorT.media.exportClips}</ContextMenuItem>
 				<ContextMenuItem
 					variant="destructive"
 					onClick={(event: React.MouseEvent<HTMLDivElement>) =>
@@ -442,6 +447,7 @@ function MediaPreview({
 	variant?: "grid" | "compact";
 }) {
 	const shouldShowDurationBadge = variant === "grid";
+	const { editorT } = useI18n();
 
 	if (item.type === "image") {
 		return (
@@ -482,7 +488,7 @@ function MediaPreview({
 		return (
 			<MediaTypePlaceholder
 				icon={Video01Icon}
-				label="Video"
+				label={editorT.media.video}
 				duration={item.duration}
 				variant="muted"
 			/>
@@ -493,7 +499,7 @@ function MediaPreview({
 		return (
 			<MediaTypePlaceholder
 				icon={MusicNote03Icon}
-				label="Audio"
+				label={editorT.media.audio}
 				duration={item.duration}
 				variant="bordered"
 			/>
@@ -501,7 +507,11 @@ function MediaPreview({
 	}
 
 	return (
-		<MediaTypePlaceholder icon={Image02Icon} label="Unknown" variant="muted" />
+		<MediaTypePlaceholder
+			icon={Image02Icon}
+			label={editorT.media.unknown}
+			variant="muted"
+		/>
 	);
 }
 
@@ -522,6 +532,14 @@ function MediaActions({
 	onSort: ({ key }: { key: MediaSortKey }) => void;
 	onImport: () => void;
 }) {
+	const { editorT } = useI18n();
+	const sortLabels: Record<MediaSortKey, string> = {
+		name: editorT.media.name,
+		type: editorT.media.type,
+		duration: editorT.media.duration,
+		size: editorT.media.fileSize,
+	};
+
 	return (
 		<div className="flex gap-1.5">
 			<TooltipProvider>
@@ -535,6 +553,11 @@ function MediaActions({
 							}
 							disabled={isProcessing}
 							className="items-center justify-center"
+							aria-label={
+								mediaViewMode === "grid"
+									? editorT.media.switchToList
+									: editorT.media.switchToGrid
+							}
 						>
 							{mediaViewMode === "grid" ? (
 								<HugeiconsIcon icon={LeftToRightListDashIcon} />
@@ -546,8 +569,8 @@ function MediaActions({
 					<TooltipContent>
 						<p>
 							{mediaViewMode === "grid"
-								? "Switch to list view"
-								: "Switch to grid view"}
+								? editorT.media.switchToList
+								: editorT.media.switchToGrid}
 						</p>
 					</TooltipContent>
 				</Tooltip>
@@ -560,6 +583,7 @@ function MediaActions({
 									variant="ghost"
 									disabled={isProcessing}
 									className="items-center justify-center"
+									aria-label={editorT.media.sort}
 								>
 									<HugeiconsIcon icon={SortingOneNineIcon} />
 								</Button>
@@ -567,28 +591,28 @@ function MediaActions({
 						</TooltipTrigger>
 						<DropdownMenuContent align="end">
 							<SortMenuItem
-								label="Name"
+								label={editorT.media.name}
 								sortKey="name"
 								currentSortBy={sortBy}
 								currentSortOrder={sortOrder}
 								onSort={onSort}
 							/>
 							<SortMenuItem
-								label="Type"
+								label={editorT.media.type}
 								sortKey="type"
 								currentSortBy={sortBy}
 								currentSortOrder={sortOrder}
 								onSort={onSort}
 							/>
 							<SortMenuItem
-								label="Duration"
+								label={editorT.media.duration}
 								sortKey="duration"
 								currentSortBy={sortBy}
 								currentSortOrder={sortOrder}
 								onSort={onSort}
 							/>
 							<SortMenuItem
-								label="File size"
+								label={editorT.media.fileSize}
 								sortKey="size"
 								currentSortBy={sortBy}
 								currentSortOrder={sortOrder}
@@ -598,8 +622,11 @@ function MediaActions({
 					</DropdownMenu>
 					<TooltipContent>
 						<p>
-							Sort by {sortBy} (
-							{sortOrder === "asc" ? "ascending" : "descending"})
+							{editorT.media.sortBy} {sortLabels[sortBy]} ({
+								sortOrder === "asc"
+									? editorT.media.ascending
+									: editorT.media.descending
+							})
 						</p>
 					</TooltipContent>
 				</Tooltip>
@@ -612,7 +639,7 @@ function MediaActions({
 				className="items-center justify-center gap-1.5"
 			>
 				<HugeiconsIcon icon={CloudUploadIcon} />
-				Import
+				{editorT.media.import}
 			</Button>
 		</div>
 	);

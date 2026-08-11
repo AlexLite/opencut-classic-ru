@@ -56,6 +56,14 @@ export const feedback = pgTable("feedback", {
 		.notNull(),
 });
 
+// Retained for migration compatibility with existing self-hosted databases.
+// New application code should not write to this legacy table.
+export const waitlist = pgTable("waitlist", {
+	id: text("id").primaryKey(),
+	email: text("email").notNull().unique(),
+	createdAt: timestamp("created_at").notNull(),
+}).enableRLS();
+
 export const verifications = pgTable("verifications", {
 	id: text("id").primaryKey(),
 	identifier: text("identifier").notNull(),

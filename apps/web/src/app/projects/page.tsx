@@ -22,7 +22,6 @@ import type {
 	TProjectSortOption,
 } from "@/project/types";
 import { formatTimecode, mediaTimeToSeconds } from "opencut-wasm";
-import { formatDate } from "@/utils/date";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
 	Breadcrumb,
@@ -67,6 +66,9 @@ import { ProjectInfoDialog } from "@/project/components/project-info-dialog";
 import { RenameProjectDialog } from "@/project/components/rename-project-dialog";
 import { cn } from "@/utils/ui";
 import { ChangelogNotification } from "@/changelog/components/changelog-notification";
+import { LanguageSwitcher } from "@/i18n/language-switcher";
+import { useI18n } from "@/i18n/use-i18n";
+
 const formatProjectDuration = ({
 	duration,
 }: {
@@ -80,11 +82,6 @@ const formatProjectDuration = ({
 	const format = durationSeconds >= 3600 ? "HH:MM:SS" : "MM:SS";
 	return formatTimecode({ time: duration, format }) ?? "";
 };
-
-const VIEW_MODE_OPTIONS = [
-	{ mode: "grid" as const, icon: GridViewIcon, label: "Grid view" },
-	{ mode: "list" as const, icon: LeftToRightListDashIcon, label: "List view" },
-];
 
 export default function ProjectsPage() {
 	const { searchQuery, sortKey, sortOrder, viewMode } = useProjectsStore();
@@ -139,6 +136,15 @@ export default function ProjectsPage() {
 
 function ProjectsHeader() {
 	const { viewMode, isHydrated, setViewMode } = useProjectsStore();
+	const { t } = useI18n();
+	const viewModeOptions = [
+		{ mode: "grid" as const, icon: GridViewIcon, label: t.projects.gridView },
+		{
+			mode: "list" as const,
+			icon: LeftToRightListDashIcon,
+			label: t.projects.listView,
+		},
+	];
 
 	return (
 		<header className="sticky top-0 z-20 px-8 bg-background flex flex-col gap-2">
@@ -149,21 +155,21 @@ function ProjectsHeader() {
 							<BreadcrumbItem>
 								<BreadcrumbLink asChild>
 									<Link href="/" className="text-sm sm:text-base">
-										Home
+										{t.common.home}
 									</Link>
 								</BreadcrumbLink>
 							</BreadcrumbItem>
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
 								<BreadcrumbPage className="text-sm sm:text-base font-medium">
-									All projects
+									{t.projects.allProjects}
 								</BreadcrumbPage>
 							</BreadcrumbItem>
 						</BreadcrumbList>
 					</Breadcrumb>
 
 					<div className="hidden md:flex items-center rounded-md border p-1 px-1.5 h-10">
-						{VIEW_MODE_OPTIONS.map(({ mode, icon, label }) => (
+						{viewModeOptions.map(({ mode, icon, label }) => (
 							<Button
 								key={mode}
 								variant="ghost"
@@ -184,6 +190,7 @@ function ProjectsHeader() {
 
 				<div className="flex items-center gap-3 md:gap-4">
 					<SearchBar className="hidden md:block" />
+					<LanguageSwitcher />
 					<NewProjectButton />
 				</div>
 			</div>
@@ -191,13 +198,6 @@ function ProjectsHeader() {
 		</header>
 	);
 }
-
-const SORT_LABELS: Record<TProjectSortKey, string> = {
-	createdAt: "Created",
-	updatedAt: "Modified",
-	name: "Name",
-	duration: "Duration",
-};
 
 function ProjectsToolbar({ projectIds }: { projectIds: string[] }) {
 	const {
@@ -210,6 +210,21 @@ function ProjectsToolbar({ projectIds }: { projectIds: string[] }) {
 		viewMode,
 		setViewMode,
 	} = useProjectsStore();
+	const { t } = useI18n();
+	const sortLabels: Record<TProjectSortKey, string> = {
+		createdAt: t.projects.created,
+		updatedAt: t.projects.modified,
+		name: t.projects.name,
+		duration: t.projects.duration,
+	};
+	const viewModeOptions = [
+		{ mode: "grid" as const, icon: GridViewIcon, label: t.projects.gridView },
+		{
+			mode: "list" as const,
+			icon: LeftToRightListDashIcon,
+			label: t.projects.listView,
+		},
+	];
 
 	const selectedProjectCount = selectedProjectIds.length;
 	const isAllSelected =
@@ -243,7 +258,7 @@ function ProjectsToolbar({ projectIds }: { projectIds: string[] }) {
 						}
 					/>
 					<span className="text-muted-foreground hidden md:block">
-						Select all
+						{t.common.selectAll}
 					</span>
 				</Label>
 
@@ -251,7 +266,7 @@ function ProjectsToolbar({ projectIds }: { projectIds: string[] }) {
 
 				<SortDropdown>
 					<Button variant="text" className="text-muted-foreground pl-2">
-						{SORT_LABELS[sortKey]}
+						{sortLabels[sortKey]}
 					</Button>
 				</SortDropdown>
 				<Button
@@ -269,7 +284,11 @@ function ProjectsToolbar({ projectIds }: { projectIds: string[] }) {
 							});
 						}
 					}}
-					aria-label={`Sort ${sortOrder === "asc" ? "ascending" : "descending"}`}
+					aria-label={
+						sortOrder === "asc"
+							? t.projects.sortAscending
+							: t.projects.sortDescending
+					}
 				>
 					<HugeiconsIcon
 						icon={ArrowDown02Icon}
@@ -280,7 +299,7 @@ function ProjectsToolbar({ projectIds }: { projectIds: string[] }) {
 				<div className="h-4 w-px bg-border/50 block md:hidden" />
 
 				<div className="flex md:hidden items-center gap-4">
-					{VIEW_MODE_OPTIONS.map(({ mode, icon, label }) => (
+					{viewModeOptions.map(({ mode, icon, label }) => (
 						<Button
 							key={mode}
 							variant="text"
@@ -310,6 +329,7 @@ function SearchBar({
 	collapsed?: boolean;
 }) {
 	const { searchQuery, setSearchQuery } = useProjectsStore();
+	const { t } = useI18n();
 
 	return (
 		<>
@@ -319,6 +339,7 @@ function SearchBar({
 						size="icon"
 						variant="outline"
 						className="size-10.5 rounded-full"
+						aria-label={t.common.search}
 					>
 						<HugeiconsIcon icon={Search01Icon} />
 					</Button>
@@ -331,7 +352,7 @@ function SearchBar({
 						aria-hidden="true"
 					/>
 					<Input
-						placeholder="Search..."
+						placeholder={t.common.search}
 						value={searchQuery}
 						onChange={(event) => setSearchQuery({ query: event.target.value })}
 						size="lg"
@@ -342,21 +363,6 @@ function SearchBar({
 		</>
 	);
 }
-
-const PROJECT_ACTIONS = [
-	{
-		id: "duplicate",
-		label: "Duplicate",
-		icon: Copy01Icon,
-		variant: "outline" as const,
-	},
-	{
-		id: "delete",
-		label: "Delete",
-		icon: Delete02Icon,
-		variant: "destructive-foreground" as const,
-	},
-] as const;
 
 async function deleteProjects({
 	editor,
@@ -394,6 +400,21 @@ function ProjectActions() {
 	const editor = useEditor();
 	const { selectedProjectIds, clearSelectedProjects } = useProjectsStore();
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+	const { t } = useI18n();
+	const projectActions = [
+		{
+			id: "duplicate",
+			label: t.common.duplicate,
+			icon: Copy01Icon,
+			variant: "outline" as const,
+		},
+		{
+			id: "delete",
+			label: t.common.delete,
+			icon: Delete02Icon,
+			variant: "destructive-foreground" as const,
+		},
+	] as const;
 
 	const savedProjects = editor.project.getSavedProjects();
 	const selectedProjectNames = savedProjects
@@ -424,13 +445,15 @@ function ProjectActions() {
 		<>
 			<div className="flex items-center gap-2.5 px-3">
 				<div className="hidden sm:flex items-center gap-2.5">
-					{PROJECT_ACTIONS.map((action) => (
+					{projectActions.map((action) => (
 						<Button
 							key={action.id}
 							size="icon"
 							variant={action.variant}
 							className="size-9"
 							onClick={actionHandlers[action.id]}
+							aria-label={action.label}
+							title={action.label}
 						>
 							<HugeiconsIcon icon={action.icon} />
 						</Button>
@@ -444,7 +467,7 @@ function ProjectActions() {
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
-						{PROJECT_ACTIONS.map((action) => (
+						{projectActions.map((action) => (
 							<DropdownMenuItem
 								key={action.id}
 								variant={action.id === "delete" ? "destructive" : undefined}
@@ -470,35 +493,27 @@ function ProjectActions() {
 
 function SortDropdown({ children }: { children: React.ReactNode }) {
 	const { sortKey, setSortKey } = useProjectsStore();
+	const { t } = useI18n();
+	const sortItems: Array<{ key: TProjectSortKey; label: string }> = [
+		{ key: "createdAt", label: t.projects.created },
+		{ key: "updatedAt", label: t.projects.modified },
+		{ key: "name", label: t.projects.name },
+		{ key: "duration", label: t.projects.duration },
+	];
 
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
 			<DropdownMenuContent className="w-48" align="center">
-				<DropdownMenuCheckboxItem
-					checked={sortKey === "createdAt"}
-					onCheckedChange={() => setSortKey({ sortKey: "createdAt" })}
-				>
-					Created
-				</DropdownMenuCheckboxItem>
-				<DropdownMenuCheckboxItem
-					checked={sortKey === "updatedAt"}
-					onCheckedChange={() => setSortKey({ sortKey: "updatedAt" })}
-				>
-					Modified
-				</DropdownMenuCheckboxItem>
-				<DropdownMenuCheckboxItem
-					checked={sortKey === "name"}
-					onCheckedChange={() => setSortKey({ sortKey: "name" })}
-				>
-					Name
-				</DropdownMenuCheckboxItem>
-				<DropdownMenuCheckboxItem
-					checked={sortKey === "duration"}
-					onCheckedChange={() => setSortKey({ sortKey: "duration" })}
-				>
-					Duration
-				</DropdownMenuCheckboxItem>
+				{sortItems.map((item) => (
+					<DropdownMenuCheckboxItem
+						key={item.key}
+						checked={sortKey === item.key}
+						onCheckedChange={() => setSortKey({ sortKey: item.key })}
+					>
+						{item.label}
+					</DropdownMenuCheckboxItem>
+				))}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
@@ -507,10 +522,11 @@ function SortDropdown({ children }: { children: React.ReactNode }) {
 function NewProjectButton() {
 	const editor = useEditor();
 	const router = useRouter();
+	const { t } = useI18n();
 
 	const handleCreateProject = async () => {
 		const projectId = await editor.project.createNewProject({
-			name: "New project",
+			name: t.projects.newProject,
 		});
 		router.push(`/editor/${projectId}`);
 	};
@@ -521,8 +537,12 @@ function NewProjectButton() {
 			className="flex px-5 md:px-6"
 			onClick={handleCreateProject}
 		>
-			<span className="text-sm font-medium hidden md:block">New project</span>
-			<span className="text-sm font-medium block md:hidden">New</span>
+			<span className="text-sm font-medium hidden md:block">
+				{t.projects.newProject}
+			</span>
+			<span className="text-sm font-medium block md:hidden">
+				{t.projects.newProjectShort}
+			</span>
 		</Button>
 	);
 }
@@ -548,9 +568,11 @@ function ProjectItem({
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
 	const editor = useEditor();
+	const { t, formatDate } = useI18n();
 	const durationLabel = formatProjectDuration({ duration: project.duration });
 	const isMultiSelect = selectedProjectCount > 1;
 	const isGridView = viewMode === "grid";
+	const createdDate = formatDate(project.createdAt, { dateStyle: "medium" });
 
 	const handleRename = () => setIsRenameDialogOpen(true);
 	const handleDuplicate = async () => {
@@ -584,7 +606,7 @@ function ProjectItem({
 					{project.thumbnail ? (
 						<Image
 							src={project.thumbnail}
-							alt="Project thumbnail"
+							alt={t.projects.projectThumbnailAlt}
 							fill
 							className="object-cover"
 						/>
@@ -608,7 +630,9 @@ function ProjectItem({
 				</h3>
 				<div className="text-muted-foreground flex items-center gap-1.5 text-sm">
 					<HugeiconsIcon icon={Calendar04Icon} className="size-4" />
-					<span>Created {formatDate({ date: project.createdAt })}</span>
+					<span>
+						{t.projects.created} {createdDate}
+					</span>
 				</div>
 			</CardContent>
 		</Card>
@@ -620,7 +644,7 @@ function ProjectItem({
 				{project.thumbnail ? (
 					<Image
 						src={project.thumbnail}
-						alt="Project thumbnail"
+						alt={t.projects.projectThumbnailAlt}
 						fill
 						className="object-cover"
 					/>
@@ -640,7 +664,7 @@ function ProjectItem({
 			</span>
 
 			<span className="text-muted-foreground text-sm shrink-0 w-auto pl-8 text-right hidden xs:block">
-				{formatDate({ date: project.createdAt })}
+				{createdDate}
 			</span>
 		</div>
 	);
@@ -771,25 +795,27 @@ function ProjectContextMenuContent({
 	onDeleteClick: () => void;
 	onInfoClick: () => void;
 }) {
+	const { t } = useI18n();
+
 	return (
 		<ContextMenuContent>
 			<ContextMenuItem
 				icon={<HugeiconsIcon icon={Edit03Icon} />}
 				onClick={onRenameClick}
 			>
-				Rename
+				{t.common.rename}
 			</ContextMenuItem>
 			<ContextMenuItem
 				icon={<HugeiconsIcon icon={Copy01Icon} />}
 				onClick={onDuplicateClick}
 			>
-				Duplicate
+				{t.common.duplicate}
 			</ContextMenuItem>
 			<ContextMenuItem
 				icon={<HugeiconsIcon icon={InformationCircleIcon} />}
 				onClick={onInfoClick}
 			>
-				Info
+				{t.common.info}
 			</ContextMenuItem>
 			<ContextMenuSeparator />
 			<ContextMenuItem
@@ -797,7 +823,7 @@ function ProjectContextMenuContent({
 				icon={<HugeiconsIcon icon={Delete02Icon} />}
 				onClick={onDeleteClick}
 			>
-				Delete
+				{t.common.delete}
 			</ContextMenuItem>
 		</ContextMenuContent>
 	);
@@ -820,6 +846,8 @@ function ProjectMenu({
 	onDeleteClick: () => void;
 	onInfoClick: () => void;
 }) {
+	const { t } = useI18n();
+
 	const handleMenuClick = ({
 		event,
 	}: {
@@ -874,7 +902,7 @@ function ProjectMenu({
 							: "!bg-transparent !shadow-none"
 					}
 					size="icon"
-					aria-label="Project menu"
+					aria-label={t.projects.projectMenu}
 					onClick={(event) =>
 						handleMenuClick({
 							event: event as unknown as MouseEvent<HTMLButtonElement>,
@@ -897,19 +925,19 @@ function ProjectMenu({
 			<DropdownMenuContent className="w-48" align="end">
 				<DropdownMenuItem onClick={handleRename}>
 					<HugeiconsIcon icon={Edit03Icon} />
-					Rename
+					{t.common.rename}
 				</DropdownMenuItem>
 				<DropdownMenuItem onClick={handleDuplicate}>
 					<HugeiconsIcon icon={Copy01Icon} />
-					Duplicate
+					{t.common.duplicate}
 				</DropdownMenuItem>
 				<DropdownMenuItem onClick={handleInfoClick}>
 					<HugeiconsIcon icon={InformationCircleIcon} />
-					Info
+					{t.common.info}
 				</DropdownMenuItem>
 				<DropdownMenuItem variant="destructive" onClick={handleDeleteClick}>
 					<HugeiconsIcon icon={Delete02Icon} />
-					Delete
+					{t.common.delete}
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
@@ -952,17 +980,18 @@ function EmptyState() {
 	const router = useRouter();
 	const editor = useEditor();
 	const savedProjects = editor.project.getSavedProjects();
+	const { t } = useI18n();
 
 	const handleCreateProject = async () => {
 		try {
 			const projectId = await editor.project.createNewProject({
-				name: "New project",
+				name: t.projects.newProject,
 			});
 			router.push(`/editor/${projectId}`);
 		} catch (error) {
-			toast.error("Failed to create project", {
+			toast.error(t.projects.createFailed, {
 				description:
-					error instanceof Error ? error.message : "Please try again",
+					error instanceof Error ? error.message : t.common.tryAgain,
 			});
 		}
 	};
@@ -976,9 +1005,10 @@ function EmptyState() {
 						className="text-muted-foreground size-16 bg-accent/35 border rounded-md p-4"
 					/>
 					<div className="flex flex-col items-center gap-3">
-						<h3 className="text-lg font-medium">No results found</h3>
+						<h3 className="text-lg font-medium">{t.projects.noResults}</h3>
 						<p className="text-muted-foreground max-w-md">
-							Your search for "{searchQuery}" did not return any results.
+							{t.projects.searchNoResultsPrefix} «{searchQuery}»{" "}
+							{t.projects.searchNoResultsSuffix}
 						</p>
 					</div>
 				</div>
@@ -987,7 +1017,7 @@ function EmptyState() {
 					variant="outline"
 					size="lg"
 				>
-					Clear search
+					{t.projects.clearSearch}
 				</Button>
 			</div>
 		);
@@ -1002,15 +1032,14 @@ function EmptyState() {
 						className="text-muted-foreground size-8"
 					/>
 				</div>
-				<h3 className="text-lg font-medium">No projects yet</h3>
+				<h3 className="text-lg font-medium">{t.projects.noProjects}</h3>
 				<p className="text-muted-foreground max-w-md">
-					Start creating your first project. Import media, edit, and export your
-					videos. All privately.
+					{t.projects.noProjectsDescription}
 				</p>
 			</div>
 			<Button size="lg" className="gap-2" onClick={handleCreateProject}>
 				<HugeiconsIcon icon={PlusSignIcon} />
-				Create your first project
+				{t.projects.createFirstProject}
 			</Button>
 		</div>
 	);

@@ -1,10 +1,13 @@
+"use client";
+
 import { ChevronRight, MoreHorizontal } from "lucide-react";
 import { Slot } from "radix-ui";
-
+import { useI18n } from "@/i18n/use-i18n";
 import { cn } from "@/utils/ui";
 
 function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
-	return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
+	const { uiT } = useI18n();
+	return <nav aria-label={uiT.breadcrumb.label} data-slot="breadcrumb" {...props} />;
 }
 
 function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
@@ -34,11 +37,8 @@ function BreadcrumbLink({
 	asChild,
 	className,
 	...props
-}: React.ComponentProps<"a"> & {
-	asChild?: boolean;
-}) {
+}: React.ComponentProps<"a"> & { asChild?: boolean }) {
 	const Comp = asChild ? Slot.Root : "a";
-
 	return (
 		<Comp
 			data-slot="breadcrumb-link"
@@ -81,16 +81,16 @@ function BreadcrumbEllipsis({
 	className,
 	...props
 }: React.ComponentProps<"span">) {
+	const { uiT } = useI18n();
 	return (
 		<span
 			data-slot="breadcrumb-ellipsis"
 			role="presentation"
-			aria-hidden="true"
 			className={cn("flex size-9 items-center justify-center", className)}
 			{...props}
 		>
-			<MoreHorizontal className="size-4" />
-			<span className="sr-only">More</span>
+			<MoreHorizontal className="size-4" aria-hidden="true" />
+			<span className="sr-only">{uiT.breadcrumb.more}</span>
 		</span>
 	);
 }

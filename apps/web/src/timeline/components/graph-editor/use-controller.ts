@@ -5,6 +5,7 @@ import { useEditor } from "@/editor/use-editor";
 import { registerCanceller } from "@/editor/cancel-interaction";
 import type { NormalizedCubicBezier } from "@/animation/types";
 import { useKeyframeSelection } from "@/timeline/hooks/element/use-keyframe-selection";
+import { useI18n } from "@/i18n/use-i18n";
 import {
 	applyGraphEditorCurvePreview,
 	buildGraphEditorCurvePatches,
@@ -14,6 +15,7 @@ import {
 
 export function useGraphEditorController() {
 	const editor = useEditor();
+	const { timelineT } = useI18n();
 	const renderTracks = useEditor(
 		(currentEditor) =>
 			currentEditor.timeline.getPreviewTracks() ??
@@ -164,12 +166,20 @@ export function useGraphEditorController() {
 		[editor, state],
 	);
 
+	const message =
+		state.status === "ready"
+			? timelineT.graphEditor.open
+			: timelineT.graphEditor.unavailable[state.reason];
+	const localizedState =
+		state.status === "ready" ? state : { ...state, message };
+
 	return {
 		open,
 		onOpenChange: handleOpenChange,
 		canOpen: state.status === "ready",
-		tooltip: state.status === "ready" ? "Open graph editor" : state.message,
-		state,
+		tooltip: message,
+		message,
+		state: localizedState,
 		onActiveComponentKeyChange: handleActiveComponentKeyChange,
 		onPreviewValue: handlePreviewValue,
 		onCommitValue: handleCommitValue,

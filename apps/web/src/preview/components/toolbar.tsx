@@ -22,15 +22,16 @@ import {
 } from "@/components/ui/select";
 import { PREVIEW_ZOOM_PRESETS } from "@/preview/zoom";
 import { usePreviewViewport } from "./preview-viewport";
-import { GridPopover } from "./guide-popover";
-import { usePreviewStore } from "@/preview/preview-store";
 import type { MediaTime } from "@/wasm";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function PreviewToolbar({
 	onToggleFullscreen,
 }: {
 	onToggleFullscreen: () => void;
 }) {
+	const { previewT } = useI18n();
+
 	return (
 		<div className="grid grid-cols-[1fr_auto_1fr] items-center pb-3 pt-5 px-5">
 			<TimecodeDisplay />
@@ -38,20 +39,13 @@ export function PreviewToolbar({
 			<div className="justify-self-end flex items-center gap-2.5">
 				<ZoomSelect />
 				<Separator orientation="vertical" className="h-4" />
-				{/* v0.4.0 */}
-				{/* <GridPopover>
-					<Button
-						variant={activeGuideDefinition ? "secondary" : "text"}
-						size="icon"
-					>
-						{activeGuideDefinition ? (
-							activeGuideDefinition.renderTriggerIcon()
-						) : (
-							<HugeiconsIcon icon={GridTableIcon} />
-						)}
-					</Button>
-				</GridPopover> */}
-				<Button variant="text" onClick={onToggleFullscreen}>
+				<Button
+					variant="text"
+					size="icon"
+					onClick={onToggleFullscreen}
+					aria-label={previewT.fullScreen}
+					title={previewT.fullScreen}
+				>
 					<HugeiconsIcon icon={FullScreenIcon} />
 				</Button>
 			</div>
@@ -101,8 +95,9 @@ function TimecodeDisplay() {
 function ZoomSelect() {
 	const { isAtFit, zoomPercent, fitToScreen, setViewportPercent } =
 		usePreviewViewport();
+	const { previewT } = useI18n();
 
-	const displayLabel = isAtFit ? "Fit" : `${zoomPercent}%`;
+	const displayLabel = isAtFit ? previewT.fit : `${zoomPercent}%`;
 
 	const onValueChange = (value: string) => {
 		if (value === "fit") {
@@ -117,9 +112,14 @@ function ZoomSelect() {
 			value={isAtFit ? "fit" : String(zoomPercent)}
 			onValueChange={onValueChange}
 		>
-			<SelectTrigger className="tabular-nums">{displayLabel}</SelectTrigger>
+			<SelectTrigger
+				className="tabular-nums"
+				aria-label={previewT.zoom}
+			>
+				{displayLabel}
+			</SelectTrigger>
 			<SelectContent>
-				<SelectItem value="fit">Fit</SelectItem>
+				<SelectItem value="fit">{previewT.fitToScreen}</SelectItem>
 				<SelectSeparator />
 				{PREVIEW_ZOOM_PRESETS.map((preset) => (
 					<SelectItem key={preset} value={String(preset)}>
@@ -133,12 +133,16 @@ function ZoomSelect() {
 
 function PlayPauseButton() {
 	const isPlaying = useEditor((e) => e.playback.getIsPlaying());
+	const { previewT } = useI18n();
+	const label = isPlaying ? previewT.pause : previewT.play;
 
 	return (
 		<Button
 			variant="text"
 			size="icon"
 			onClick={() => invokeAction("toggle-play")}
+			aria-label={label}
+			title={label}
 		>
 			<HugeiconsIcon icon={isPlaying ? PauseIcon : PlayIcon} />
 		</Button>

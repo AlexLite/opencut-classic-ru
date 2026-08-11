@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { BasePage } from "@/app/base-page";
 import { Separator } from "@/components/ui/separator";
 import {
 	type Release as ReleaseType,
@@ -12,6 +11,7 @@ import {
 	ReleaseDescription,
 	ReleaseChanges,
 } from "@/changelog/components/release";
+import { ChangelogShell } from "./changelog-shell";
 
 export const metadata: Metadata = {
 	title: "Changelog - OpenCut",
@@ -41,7 +41,7 @@ export default function ChangelogPage() {
 	const releases = getSortedReleases();
 
 	return (
-		<BasePage title="Changelog" description="See what's new in OpenCut">
+		<ChangelogShell>
 			<div className="mx-auto w-full max-w-3xl">
 				<div className="relative">
 					<div
@@ -61,7 +61,7 @@ export default function ChangelogPage() {
 					</div>
 				</div>
 			</div>
-		</BasePage>
+		</ChangelogShell>
 	);
 }
 

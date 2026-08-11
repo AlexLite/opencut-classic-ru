@@ -1,4 +1,3 @@
-import type { ElementType } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
@@ -11,9 +10,8 @@ import {
 	TextIcon,
 	Settings01Icon,
 	SlidersHorizontalIcon,
-	ColorsIcon,
 } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import type { IconSvgElement } from "@hugeicons/react";
 
 export const TAB_KEYS = [
 	"media",
@@ -29,53 +27,17 @@ export const TAB_KEYS = [
 
 export type Tab = (typeof TAB_KEYS)[number];
 
-const createHugeiconsIcon =
-	({ icon }: { icon: IconSvgElement }) =>
-	({ className }: { className?: string }) => (
-		<HugeiconsIcon icon={icon} className={className} />
-	);
-
 export const tabs = {
-	media: {
-		icon: createHugeiconsIcon({ icon: Folder03Icon }),
-		label: "Media",
-	},
-	sounds: {
-		icon: createHugeiconsIcon({ icon: HeadphonesIcon }),
-		label: "Sounds",
-	},
-	text: {
-		icon: createHugeiconsIcon({ icon: TextIcon }),
-		label: "Text",
-	},
-	stickers: {
-		icon: createHugeiconsIcon({ icon: Happy01Icon }),
-		label: "Stickers",
-	},
-	effects: {
-		icon: createHugeiconsIcon({ icon: MagicWand05Icon }),
-		label: "Effects",
-	},
-	transitions: {
-		icon: createHugeiconsIcon({ icon: ArrowRightDoubleIcon }),
-		label: "Transitions",
-	},
-	captions: {
-		icon: createHugeiconsIcon({ icon: ClosedCaptionIcon }),
-		label: "Captions",
-	},
-	adjustment: {
-		icon: createHugeiconsIcon({ icon: SlidersHorizontalIcon }),
-		label: "Adjustment",
-	},
-	settings: {
-		icon: createHugeiconsIcon({ icon: Settings01Icon }),
-		label: "Settings",
-	},
-} satisfies Record<
-	Tab,
-	{ icon: ElementType<{ className?: string }>; label: string }
->;
+	media: { icon: Folder03Icon },
+	sounds: { icon: HeadphonesIcon },
+	text: { icon: TextIcon },
+	stickers: { icon: Happy01Icon },
+	effects: { icon: MagicWand05Icon },
+	transitions: { icon: ArrowRightDoubleIcon },
+	captions: { icon: ClosedCaptionIcon },
+	adjustment: { icon: SlidersHorizontalIcon },
+	settings: { icon: Settings01Icon },
+} satisfies Record<Tab, { icon: IconSvgElement }>;
 
 export type MediaViewMode = "grid" | "list";
 export type MediaSortKey = "name" | "type" | "duration" | "size";

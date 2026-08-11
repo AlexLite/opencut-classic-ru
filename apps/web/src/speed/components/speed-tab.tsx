@@ -27,6 +27,7 @@ import {
 	getFractionDigitsForStep,
 	snapToStep,
 } from "@/utils/math";
+import { useI18n } from "@/i18n/use-i18n";
 
 const SPEED_STEP = 0.01;
 const SPEED_FRACTION_DIGITS = getFractionDigitsForStep({ step: SPEED_STEP });
@@ -65,6 +66,7 @@ export function SpeedTab({
 	trackId: string;
 }) {
 	const editor = useEditor();
+	const { propertiesT } = useI18n();
 	const rate = clampRetimeRate({
 		rate: element.retime?.rate ?? DEFAULT_RETIME_RATE,
 	});
@@ -111,11 +113,11 @@ export function SpeedTab({
 	return (
 		<Section collapsible sectionKey={`${element.id}:speed`}>
 			<SectionHeader>
-				<SectionTitle>Speed</SectionTitle>
+				<SectionTitle>{propertiesT.speed.title}</SectionTitle>
 			</SectionHeader>
 			<SectionContent>
 				<SectionFields>
-					<SectionField label="Speed">
+					<SectionField label={propertiesT.speed.speed}>
 						<NumberField
 							icon={<HugeiconsIcon icon={DashboardSpeed02Icon} />}
 							value={speedDraft.displayValue}
@@ -140,10 +142,11 @@ export function SpeedTab({
 						/>
 					</SectionField>
 					<div className="flex items-center justify-between">
-						<span className="text-sm">Change pitch</span>
+						<span className="text-sm">{propertiesT.speed.changePitch}</span>
 						<Switch
 							checked={!maintainPitch}
 							disabled={!isPitchPreserveAvailable}
+							aria-label={propertiesT.speed.changePitch}
 							onCheckedChange={(checked) =>
 								commitRetime({ rate, maintainPitch: !checked })
 							}

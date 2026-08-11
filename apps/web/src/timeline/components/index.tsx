@@ -87,6 +87,7 @@ import { DragLine } from "./drag-line";
 import { invokeAction } from "@/actions";
 import { resolveTimelineElementIntersections } from "./selection-hit-testing";
 import { cn } from "@/utils/ui";
+import { useI18n } from "@/i18n/use-i18n";
 
 const TRACKS_CONTAINER_MAX_HEIGHT = 800;
 const FALLBACK_CONTAINER_WIDTH = 1000;
@@ -116,6 +117,7 @@ const TRACK_ICONS: Record<TimelineTrack["type"], ReactNode> = {
 
 export function Timeline() {
 	const snappingEnabled = useTimelineStore((s) => s.snappingEnabled);
+	const { timelineT } = useI18n();
 	const {
 		selectedElements,
 		clearElementSelection,
@@ -302,12 +304,12 @@ export function Timeline() {
 
 	const { dragView, handleElementMouseDown, handleElementClick } =
 		useElementInteraction({
-		zoomLevel,
-		tracksContainerRef,
-		tracksScrollRef,
-		snappingEnabled,
-		onSnapPointChange: handleSnapPointChange,
-	});
+			zoomLevel,
+			tracksContainerRef,
+			tracksScrollRef,
+			snappingEnabled,
+			onSnapPointChange: handleSnapPointChange,
+		});
 	const isElementDragging = dragView.kind === "dragging";
 
 	const {
@@ -434,7 +436,7 @@ export function Timeline() {
 				"panel bg-background relative flex h-full flex-col overflow-hidden rounded-sm border"
 			}
 			{...dragProps}
-			aria-label="Timeline"
+			aria-label={timelineT.ariaLabel}
 		>
 			<TimelineToolbar
 				zoomLevel={zoomLevel}
@@ -455,9 +457,7 @@ export function Timeline() {
 					className="relative isolate flex flex-1 flex-col overflow-hidden"
 					ref={tracksContainerRef}
 				>
-					<SelectionBox
-						bounds={selectionBox?.bounds ?? null}
-					/>
+					<SelectionBox bounds={selectionBox?.bounds ?? null} />
 					<DragLine
 						dropTarget={dropTarget}
 						tracks={tracks}
@@ -753,6 +753,7 @@ function TimelineTrackRows({
 }) {
 	const timeline = useEditor((e) => e.timeline);
 	const scene = useEditor((e) => e.scenes.getActiveSceneOrNull());
+	const { timelineT } = useI18n();
 	const tracks = useMemo<TimelineTrack[]>(
 		() =>
 			scene
@@ -843,7 +844,7 @@ function TimelineTrackRows({
 								invokeAction("paste-copied");
 							}}
 						>
-							Paste elements
+							{timelineT.track.pasteElements}
 						</ContextMenuItem>
 						<ContextMenuItem
 							icon={<HugeiconsIcon icon={VolumeHighIcon} />}
@@ -853,8 +854,8 @@ function TimelineTrackRows({
 							}}
 						>
 							{canTrackHaveAudio(track) && track.muted
-								? "Unmute track"
-								: "Mute track"}
+								? timelineT.track.unmute
+								: timelineT.track.mute}
 						</ContextMenuItem>
 						<ContextMenuItem
 							icon={<HugeiconsIcon icon={ViewIcon} />}
@@ -864,8 +865,8 @@ function TimelineTrackRows({
 							}}
 						>
 							{canTrackBeHidden(track) && track.hidden
-								? "Show track"
-								: "Hide track"}
+								? timelineT.track.show
+								: timelineT.track.hide}
 						</ContextMenuItem>
 						{track.id !== mainTrackId && (
 							<ContextMenuItem
@@ -876,7 +877,7 @@ function TimelineTrackRows({
 								}}
 								variant="destructive"
 							>
-								Delete track
+								{timelineT.track.delete}
 							</ContextMenuItem>
 						)}
 					</ContextMenuContent>
@@ -935,6 +936,9 @@ function TrackToggleIcon({
 }
 
 function PropertyTree({ rows }: { rows: ExpandedRow[] }) {
+	const { timelineT } = useI18n();
+	const propertyLabels = timelineT.properties as Partial<Record<string, string>>;
+
 	return (
 		<div className="flex flex-col overflow-hidden">
 			{rows.map((row) => (
@@ -944,7 +948,7 @@ function PropertyTree({ rows }: { rows: ExpandedRow[] }) {
 					style={{ height: `${KEYFRAME_LANE_HEIGHT_PX}px` }}
 				>
 					<span className="text-muted-foreground truncate text-xs leading-none">
-						{getPropertyLabel(row.propertyPath)}
+						{propertyLabels[row.propertyPath] ?? getPropertyLabel(row.propertyPath)}
 					</span>
 				</div>
 			))}

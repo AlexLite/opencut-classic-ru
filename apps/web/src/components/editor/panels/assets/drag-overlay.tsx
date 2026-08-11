@@ -1,5 +1,8 @@
+"use client";
+
 import { HugeiconsIcon } from "@hugeicons/react";
 import { UploadIcon } from "@hugeicons/core-free-icons";
+import { useI18n } from "@/i18n/use-i18n";
 
 interface MediaDragOverlayProps {
 	isVisible: boolean;
@@ -14,6 +17,7 @@ export function MediaDragOverlay({
 	progress = 0,
 	onClick,
 }: MediaDragOverlayProps) {
+	const { editorT } = useI18n();
 	if (!isVisible) return null;
 
 	const handleClick = ({
@@ -41,8 +45,8 @@ export function MediaDragOverlay({
 			<div className="space-y-2">
 				<p className="text-muted-foreground max-w-sm text-xs">
 					{isProcessing
-						? `Processing your files (${progress}%)`
-						: "Drag and drop videos, photos, and audio files here"}
+						? `${editorT.media.processingFiles} (${progress}%)`
+						: editorT.media.dragDrop}
 				</p>
 			</div>
 

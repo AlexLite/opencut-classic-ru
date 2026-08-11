@@ -1,0 +1,27 @@
+export const previewEn = {
+	fit: "Fit",
+	fitToScreen: "Fit to screen",
+	fullScreen: "Full screen",
+	exitFullScreen: "Exit full screen",
+	play: "Play",
+	pause: "Pause",
+	saveSnapshot: "Save snapshot",
+	copySnapshot: "Copy snapshot",
+	snapshotCopied: "Snapshot copied",
+	failedToSaveSnapshot: "Failed to save snapshot",
+	failedToCopySnapshot: "Failed to copy snapshot",
+	tryAgain: "Please try again",
+	zoom: "Preview zoom",
+	canvas: "Preview canvas",
+	editText: "Edit text",
+	overlays: {
+		bookmarkNotes: "Bookmark notes",
+		guides: "Guides",
+	},
+	guides: {
+		title: "Guides",
+		custom: "Custom",
+		grid: "Grid",
+		addGuideLine: "Add guide line",
+	},
+} as const;

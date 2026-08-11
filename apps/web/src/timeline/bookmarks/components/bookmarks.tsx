@@ -23,8 +23,9 @@ import { ColorPicker } from "@/components/ui/color-picker";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { uppercase } from "@/utils/string";
-import { clamp, formatNumberForDisplay } from "@/utils/math";
+import { clamp } from "@/utils/math";
 import { timelineTimeToPixels, timelineTimeToSnappedPixels } from "@/timeline";
+import { useI18n } from "@/i18n/use-i18n";
 import {
 	type MediaTime,
 	mediaTimeFromSeconds,
@@ -80,6 +81,7 @@ export function TimelineBookmarksRow({
 	handleRulerMouseDown,
 }: TimelineBookmarksRowProps) {
 	const bookmarks = useEditor((e) => e.scenes.getActiveScene().bookmarks);
+	const { timelineT } = useI18n();
 
 	return (
 		<div
@@ -92,7 +94,7 @@ export function TimelineBookmarksRow({
 					height: TIMELINE_BOOKMARK_ROW_HEIGHT_PX,
 					width: `${dynamicTimelineWidth}px`,
 				}}
-				aria-label="Timeline ruler"
+				aria-label={timelineT.bookmarks.ruler}
 				type="button"
 				onWheel={handleWheel}
 				onClick={(event) => {
@@ -134,6 +136,7 @@ function TimelineBookmark({
 	}) => void;
 }) {
 	const editor = useEditor();
+	const { timelineT, formatNumber } = useI18n();
 	const duration = editor.timeline.getTotalDuration();
 	const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -180,6 +183,10 @@ function TimelineBookmark({
 		event.stopPropagation();
 	};
 
+	const bookmarkSeconds = formatNumber(mediaTimeToSeconds({ time }), {
+		maximumFractionDigits: 1,
+	});
+
 	return (
 		<Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
 			<PopoverAnchor asChild>
@@ -189,7 +196,7 @@ function TimelineBookmark({
 						left: `${bookmarkLeft}px`,
 						width: `${bookmarkWidth}px`,
 					}}
-					aria-label={`Bookmark at ${formatNumberForDisplay({ value: mediaTimeToSeconds({ time }), fractionDigits: 1 })}s`}
+					aria-label={`${timelineT.bookmarks.bookmarkAt} ${bookmarkSeconds}${timelineT.bookmarks.secondsShort}`}
 					type="button"
 					onMouseDown={handleMouseDown}
 					onClick={handleClick}
@@ -298,6 +305,7 @@ function BookmarkPopoverContent({
 	onPopoverClose: () => void;
 }) {
 	const editor = useEditor();
+	const { timelineT } = useI18n();
 	const [draftColorHex, setDraftColorHex] = useState(
 		(bookmark.color ?? DEFAULT_TIMELINE_BOOKMARK_COLOR)
 			.replace("#", "")
@@ -349,16 +357,16 @@ function BookmarkPopoverContent({
 	return (
 		<>
 			<div className="flex flex-col gap-2">
-				<Label className="text-xs">Note</Label>
+				<Label className="text-xs">{timelineT.bookmarks.note}</Label>
 				<Input
-					placeholder="Add a note..."
+					placeholder={timelineT.bookmarks.addNote}
 					value={bookmark.note ?? ""}
 					onChange={(event) => handleUpdate({ note: event.target.value })}
 					className="h-8 text-sm"
 				/>
 			</div>
 			<div className="flex flex-col gap-2">
-				<Label className="text-xs">Color</Label>
+				<Label className="text-xs">{timelineT.bookmarks.color}</Label>
 				<div className="relative">
 					<ColorPicker
 						value={uppercase({ string: draftColorHex })}
@@ -378,7 +386,7 @@ function BookmarkPopoverContent({
 								type="button"
 								variant="text"
 								size="text"
-								aria-label="Reset to default color"
+								aria-label={timelineT.bookmarks.resetColor}
 								className="absolute top-1/2 right-1 -translate-y-1/2 mr-1"
 								onClick={() =>
 									editor.scenes.updateBookmark({
@@ -396,7 +404,7 @@ function BookmarkPopoverContent({
 				</div>
 			</div>
 			<div className="flex flex-col gap-2">
-				<Label className="text-xs">Duration</Label>
+				<Label className="text-xs">{timelineT.bookmarks.duration}</Label>
 				<div className="flex items-center gap-1.5">
 					<Input
 						type="number"
@@ -432,10 +440,10 @@ function BookmarkPopoverContent({
 						handleRemove();
 					}
 				}}
-				aria-label="delete bookmark"
+				aria-label={timelineT.bookmarks.deleteBookmark}
 			>
 				<HugeiconsIcon icon={Delete02Icon} className="!size-3.5" />
-				Delete
+				{timelineT.bookmarks.delete}
 			</Button>
 		</>
 	);

@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/utils/ui";
@@ -11,6 +13,7 @@ import {
 } from "../utils";
 import { ArrowRightIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function ReleaseArticle({
 	variant,
@@ -43,9 +46,15 @@ export function ReleaseArticle({
 }
 
 export function ReleaseMeta({ release }: { release: Release }) {
+	const { formatDate } = useI18n();
+	const timestamp = Date.parse(release.date);
+	const displayDate = Number.isNaN(timestamp)
+		? release.date
+		: formatDate(timestamp, { year: "numeric", month: "long", day: "numeric" });
+
 	return (
 		<span className="text-sm font-medium tracking-widest text-muted-foreground">
-			{release.version} — {release.date}
+			{release.version} — {displayDate}
 		</span>
 	);
 }
@@ -106,7 +115,10 @@ function ReleaseChangeSection({
 	type: string;
 	changes: Change[];
 }) {
-	const title = getSectionTitle({ type });
+	const { changelogT } = useI18n();
+	const title =
+		(changelogT.sections as Record<string, string>)[type] ??
+		getSectionTitle({ type });
 
 	if (isSectionCollapsible({ type })) {
 		return (

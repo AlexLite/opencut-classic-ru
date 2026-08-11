@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useEditor } from "@/editor/use-editor";
+import { useI18n } from "@/i18n/use-i18n";
 import { storageService } from "@/services/storage/service";
 
 interface StorageContextType {
@@ -27,13 +28,13 @@ interface StorageProviderProps {
 }
 
 export function StorageProvider({ children }: StorageProviderProps) {
+	const { t, uiT } = useI18n();
 	const [status, setStatus] = useState<StorageContextType>({
 		isInitialized: false,
 		isLoading: true,
 		hasSupport: false,
 		error: null,
 	});
-
 	const editor = useEditor();
 	const hasInitialized = useRef(false);
 
@@ -43,18 +44,12 @@ export function StorageProvider({ children }: StorageProviderProps) {
 
 		const initializeStorage = async () => {
 			setStatus((prev) => ({ ...prev, isLoading: true }));
-
 			try {
 				const hasSupport = storageService.isFullySupported();
-
 				if (!hasSupport) {
-					toast.warning(
-						"Storage not fully supported. Some features may not work.",
-					);
+					toast.warning(uiT.storage.unsupportedWarning);
 				}
-
 				await editor.project.loadAllProjects();
-
 				setStatus({
 					isInitialized: true,
 					isLoading: false,
@@ -67,15 +62,13 @@ export function StorageProvider({ children }: StorageProviderProps) {
 					isInitialized: false,
 					isLoading: false,
 					hasSupport: storageService.isFullySupported(),
-					error: error instanceof Error ? error.message : "Unknown error",
+					error: t.common.unknownError,
 				});
 			}
 		};
 
-		initializeStorage();
-	}, [editor.project.loadAllProjects]);
+		void initializeStorage();
+	}, [editor.project, t.common.unknownError, uiT.storage.unsupportedWarning]);
 
-	return (
-		<StorageContext.Provider value={status}>{children}</StorageContext.Provider>
-	);
+	return <StorageContext.Provider value={status}>{children}</StorageContext.Provider>;
 }

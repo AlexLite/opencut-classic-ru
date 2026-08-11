@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { ClockIcon } from "lucide-react";
 import {
@@ -20,6 +20,7 @@ import {
 	clearFormDraft,
 } from "@/components/ui/form";
 import type { FeedbackEntry } from "../types";
+import { useI18n } from "@/i18n/use-i18n";
 
 const PERSIST_KEY = "feedback-draft";
 const HISTORY_KEY = "feedback-history";
@@ -29,10 +30,27 @@ interface FeedbackFormValues {
 	message: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+function isFeedbackEntry(value: unknown): value is FeedbackEntry {
+	return (
+		isRecord(value) &&
+		typeof value.id === "string" &&
+		typeof value.message === "string" &&
+		typeof value.createdAt === "string"
+	);
+}
+
 function readHistory(): FeedbackEntry[] {
 	try {
 		const stored = localStorage.getItem(HISTORY_KEY);
-		return stored ? (JSON.parse(stored) as FeedbackEntry[]) : [];
+		if (!stored) return [];
+
+		const parsed: unknown = JSON.parse(stored);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter(isFeedbackEntry).slice(0, MAX_HISTORY);
 	} catch {
 		return [];
 	}
@@ -49,6 +67,7 @@ function writeHistory({ entries }: { entries: FeedbackEntry[] }): void {
 function useFeedback() {
 	const [entries, setEntries] = useState<FeedbackEntry[]>(readHistory);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const { editorT } = useI18n();
 
 	async function submit({
 		values,
@@ -68,20 +87,22 @@ function useFeedback() {
 			});
 
 			if (!res.ok) {
-				const data = await res.json().catch(() => null);
-				throw new Error(data?.error ?? "Failed to submit");
+				throw new Error(`Feedback request failed with status ${res.status}`);
 			}
 
-			const { entry } = await res.json();
-			const next = [entry, ...entries].slice(0, MAX_HISTORY);
+			const responseData: unknown = await res.json();
+			if (!isRecord(responseData) || !isFeedbackEntry(responseData.entry)) {
+				throw new Error("Feedback response has an invalid shape");
+			}
+
+			const next = [responseData.entry, ...entries].slice(0, MAX_HISTORY);
 			setEntries(next);
 			writeHistory({ entries: next });
 			onSuccess();
-			toast.success("Feedback sent");
+			toast.success(editorT.feedback.sent);
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Failed to send feedback",
-			);
+			console.error("Failed to send feedback:", error);
+			toast.error(editorT.feedback.failed);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -92,12 +113,13 @@ function useFeedback() {
 
 export function FeedbackPopover() {
 	const [open, setOpen] = useState(false);
+	const { editorT } = useI18n();
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button variant="outline" className="h-8">
-					Send feedback
+					{editorT.feedback.sendFeedback}
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent align="end" className="w-80 p-0">
@@ -112,10 +134,13 @@ type View = "compose" | "history";
 function FeedbackPopoverContent({ onClose }: { onClose: () => void }) {
 	const { entries, isSubmitting, submit } = useFeedback();
 	const [view, setView] = useState<View>("compose");
+	const { editorT } = useI18n();
 
 	const form = useForm<FeedbackFormValues>({
 		defaultValues: { message: "" },
 	});
+	const message = useWatch({ control: form.control, name: "message" });
+	const hasMessage = Boolean(message?.trim());
 
 	async function handleSubmit(values: FeedbackFormValues) {
 		await submit({
@@ -148,7 +173,7 @@ function FeedbackPopoverContent({ onClose }: { onClose: () => void }) {
 						onClick={() => setView("compose")}
 						className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
 					>
-						← Back
+						← {editorT.feedback.back}
 					</button>
 				</div>
 			</div>
@@ -166,7 +191,7 @@ function FeedbackPopoverContent({ onClose }: { onClose: () => void }) {
 							<FormItem>
 								<FormControl>
 									<Textarea
-										placeholder="Thoughts, bugs, ideas..."
+										placeholder={editorT.feedback.placeholder}
 										className="min-h-[7rem] text-sm p-3 bg-background shadow-none border-none! resize-none"
 										{...field}
 									/>
@@ -188,22 +213,22 @@ function FeedbackPopoverContent({ onClose }: { onClose: () => void }) {
 							<span />
 						)}
 						<div className="flex gap-2">
-							{!form.watch("message").trim() && (
+							{!hasMessage && (
 								<Button
 									type="button"
 									variant="outline"
 									size="sm"
 									onClick={onClose}
 								>
-									Cancel
+									{editorT.feedback.cancel}
 								</Button>
 							)}
 							<Button
 								type="submit"
 								size="sm"
-								disabled={isSubmitting || !form.watch("message").trim()}
+								disabled={isSubmitting || !hasMessage}
 							>
-								{isSubmitting ? <Spinner /> : "Send"}
+								{isSubmitting ? <Spinner /> : editorT.feedback.send}
 							</Button>
 						</div>
 					</div>
@@ -213,29 +238,40 @@ function FeedbackPopoverContent({ onClose }: { onClose: () => void }) {
 	);
 }
 
-function relativeDate(iso: string): string {
+function relativeDate({
+	iso,
+	intlLocale,
+}: {
+	iso: string;
+	intlLocale: string;
+}): string {
 	const diff = Date.now() - new Date(iso).getTime();
 	const mins = Math.floor(diff / 60_000);
-	if (mins < 1) return "just now";
-	if (mins < 60) return `${mins}m ago`;
+	const relative = new Intl.RelativeTimeFormat(intlLocale, {
+		numeric: "auto",
+		style: "short",
+	});
+	if (mins < 1) return relative.format(0, "minute");
+	if (mins < 60) return relative.format(-mins, "minute");
 	const hrs = Math.floor(mins / 60);
-	if (hrs < 24) return `${hrs}h ago`;
+	if (hrs < 24) return relative.format(-hrs, "hour");
 	const days = Math.floor(hrs / 24);
-	if (days < 7) return `${days}d ago`;
-	return new Date(iso).toLocaleDateString(undefined, {
+	if (days < 7) return relative.format(-days, "day");
+	return new Intl.DateTimeFormat(intlLocale, {
 		month: "short",
 		day: "numeric",
-	});
+	}).format(new Date(iso));
 }
 
 function FeedbackEntryItem({ entry }: { entry: FeedbackEntry }) {
+	const { intlLocale } = useI18n();
 	return (
 		<div className="px-3 py-2.5">
 			<p className="text-sm text-muted-foreground leading-snug whitespace-pre-wrap break-words">
 				{entry.message}
 			</p>
 			<span className="mt-1 block text-[11px] text-muted-foreground/50">
-				{relativeDate(entry.createdAt)}
+				{relativeDate({ iso: entry.createdAt, intlLocale })}
 			</span>
 		</div>
 	);

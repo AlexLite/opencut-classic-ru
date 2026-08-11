@@ -9,7 +9,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U opencut"]
       interval: 30s
@@ -21,7 +21,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -31,8 +31,9 @@ services:
 
   serverless-redis-http:
     image: hiett/serverless-redis-http:latest
+    restart: unless-stopped
     ports:
-      - "8079:80"
+      - "127.0.0.1:8079:80"
     environment:
       SRH_MODE: env
       SRH_TOKEN: example_token
@@ -47,36 +48,62 @@ services:
       retries: 5
       start_period: 10s
 
+  migrate:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+      target: migrator
+    restart: "no"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://opencut:opencut@db:5432/opencut
+    depends_on:
+      db:
+        condition: service_healthy
+
   web:
     build:
       context: .
       dockerfile: ./apps/web/Dockerfile
       args:
-        - FREESOUND_CLIENT_ID=${FREESOUND_CLIENT_ID}
-        - FREESOUND_API_KEY=${FREESOUND_API_KEY}
-        - NEXT_PUBLIC_MARBLE_API_URL=${NEXT_PUBLIC_MARBLE_API_URL:-https://api.marblecms.com}
-        - MARBLE_WORKSPACE_KEY=${MARBLE_WORKSPACE_KEY:-build-placeholder}
+        DATABASE_URL: postgresql://opencut:opencut@db:5432/opencut
+        BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env before starting the stack}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
+        NEXT_PUBLIC_MARBLE_API_URL: ${NEXT_PUBLIC_MARBLE_API_URL:-https://api.marblecms.com}
+        NEXT_PUBLIC_DATABUDDY_CLIENT_ID: ${NEXT_PUBLIC_DATABUDDY_CLIENT_ID:-}
+        UPSTASH_REDIS_REST_URL: http://serverless-redis-http:80
+        UPSTASH_REDIS_REST_TOKEN: example_token
+        MARBLE_WORKSPACE_KEY: ${MARBLE_WORKSPACE_KEY:-build-placeholder}
+        FREESOUND_CLIENT_ID: ${FREESOUND_CLIENT_ID:-placeholder}
+        FREESOUND_API_KEY: ${FREESOUND_API_KEY:-placeholder}
     restart: unless-stopped
     ports:
       - "3100:3000"
     environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://opencut:opencut@db:5432/opencut
-      - BETTER_AUTH_SECRET=your-production-secret-key-here
-      - UPSTASH_REDIS_REST_URL=http://serverless-redis-http:80
-      - UPSTASH_REDIS_REST_TOKEN=example_token
-      - NEXT_PUBLIC_SITE_URL=http://localhost:3100
-      - NEXT_PUBLIC_MARBLE_API_URL=https://api.marblecms.com
-      - MARBLE_WORKSPACE_KEY=${MARBLE_WORKSPACE_KEY:-placeholder}
-      - FREESOUND_CLIENT_ID=${FREESOUND_CLIENT_ID}
-      - FREESOUND_API_KEY=${FREESOUND_API_KEY}
+      NODE_ENV: production
+      DATABASE_URL: postgresql://opencut:opencut@db:5432/opencut
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env before starting the stack}
+      UPSTASH_REDIS_REST_URL: http://serverless-redis-http:80
+      UPSTASH_REDIS_REST_TOKEN: example_token
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
+      NEXT_PUBLIC_MARBLE_API_URL: ${NEXT_PUBLIC_MARBLE_API_URL:-https://api.marblecms.com}
+      NEXT_PUBLIC_DATABUDDY_CLIENT_ID: ${NEXT_PUBLIC_DATABUDDY_CLIENT_ID:-}
+      MARBLE_WORKSPACE_KEY: ${MARBLE_WORKSPACE_KEY:-placeholder}
+      FREESOUND_CLIENT_ID: ${FREESOUND_CLIENT_ID:-placeholder}
+      FREESOUND_API_KEY: ${FREESOUND_API_KEY:-placeholder}
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       serverless-redis-http:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 5

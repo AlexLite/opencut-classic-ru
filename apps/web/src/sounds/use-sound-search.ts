@@ -1,5 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSoundsStore } from "@/sounds/sounds-store";
+import { useI18n } from "@/i18n/use-i18n";
+
+const TOP_SOUNDS_PAGE_SIZE = 50;
+const SEARCH_PAGE_SIZE = 20;
+const DEFAULT_COMMERCIAL_ONLY = true;
 
 export function useSoundSearch({
 	query,
@@ -8,15 +13,22 @@ export function useSoundSearch({
 	query: string;
 	commercialOnly: boolean;
 }) {
+	const { editorT } = useI18n();
+	const previousQueryRef = useRef(query);
+	const topCommercialFilterRef = useRef(DEFAULT_COMMERCIAL_ONLY);
 	const {
+		topSoundEffects,
 		searchResults,
 		isSearching,
 		searchError,
-		lastSearchQuery,
 		currentPage,
 		hasNextPage,
 		isLoadingMore,
 		totalCount,
+		hasLoaded,
+		setTopSoundEffects,
+		setLoading,
+		setError,
 		setSearchResults,
 		setSearching,
 		setSearchError,
@@ -36,17 +48,23 @@ export function useSoundSearch({
 		try {
 			setLoadingMore({ loading: true });
 			const nextPage = currentPage + 1;
-
+			const isSearch = Boolean(query.trim());
 			const searchParams = new URLSearchParams({
 				page: nextPage.toString(),
+				page_size: (isSearch
+					? SEARCH_PAGE_SIZE
+					: TOP_SOUNDS_PAGE_SIZE
+				).toString(),
 				type: "effects",
+				commercial_only: commercialOnly.toString(),
 			});
 
-			if (query.trim()) {
+			if (isSearch) {
 				searchParams.set("q", query);
+			} else {
+				searchParams.set("sort", "downloads");
 			}
 
-			searchParams.set("commercial_only", commercialOnly.toString());
 			const response = await fetch(
 				`/api/sounds/search?${searchParams.toString()}`,
 			);
@@ -54,68 +72,124 @@ export function useSoundSearch({
 			if (response.ok) {
 				const data = await response.json();
 
-				if (query.trim()) {
-					appendSearchResults(data.results);
+				if (isSearch) {
+					appendSearchResults({ results: data.results });
 				} else {
-					appendTopSounds(data.results);
+					appendTopSounds({ results: data.results });
 				}
 
 				setCurrentPage({ page: nextPage });
 				setHasNextPage({ hasNext: !!data.next });
-				setTotalCount(data.count);
+				setTotalCount({ count: data.count });
 			} else {
-				setSearchError({ error: `Load more failed: ${response.status}` });
+				console.error("Failed to load more sounds:", response.status);
+				setSearchError({ error: editorT.sounds.loadFailed });
 			}
-		} catch (err) {
-			setSearchError({
-				error: err instanceof Error ? err.message : "Load more failed",
-			});
+		} catch (error) {
+			console.error("Failed to load more sounds:", error);
+			setSearchError({ error: editorT.sounds.loadFailed });
 		} finally {
 			setLoadingMore({ loading: false });
 		}
 	};
 
 	useEffect(() => {
+		const previousQuery = previousQueryRef.current;
+		previousQueryRef.current = query;
+
 		if (!query.trim()) {
 			setSearchResults({ results: [] });
 			setSearchError({ error: null });
 			setLastSearchQuery({ query: "" });
-			return;
-		}
 
-		if (query === lastSearchQuery && searchResults.length > 0) {
-			return;
+			const returningToTop = Boolean(previousQuery.trim());
+			const filterChanged = topCommercialFilterRef.current !== commercialOnly;
+			if (!hasLoaded || (!returningToTop && !filterChanged)) {
+				return;
+			}
+
+			let ignore = false;
+			resetPagination();
+
+			const timeoutId = setTimeout(async () => {
+				try {
+					setLoading({ loading: true });
+					setError({ error: null });
+					const searchParams = new URLSearchParams({
+						page: "1",
+						page_size: TOP_SOUNDS_PAGE_SIZE.toString(),
+						type: "effects",
+						sort: "downloads",
+						commercial_only: commercialOnly.toString(),
+					});
+					const response = await fetch(
+						`/api/sounds/search?${searchParams.toString()}`,
+					);
+
+					if (ignore) return;
+					if (!response.ok) {
+						throw new Error(`Failed to fetch: ${response.status}`);
+					}
+
+					const data = await response.json();
+					setTopSoundEffects({ sounds: data.results });
+					setCurrentPage({ page: 1 });
+					setHasNextPage({ hasNext: !!data.next });
+					setTotalCount({ count: data.count });
+					topCommercialFilterRef.current = commercialOnly;
+				} catch (error) {
+					if (!ignore) {
+						console.error("Failed to refresh top sounds:", error);
+						setError({ error: editorT.sounds.loadFailed });
+					}
+				} finally {
+					if (!ignore) {
+						setLoading({ loading: false });
+					}
+				}
+			}, 100);
+
+			return () => {
+				ignore = true;
+				clearTimeout(timeoutId);
+			};
 		}
 
 		let ignore = false;
-
 		const timeoutId = setTimeout(async () => {
 			try {
 				setSearching({ searching: true });
 				setSearchError({ error: null });
 				resetPagination();
 
+				const searchParams = new URLSearchParams({
+					q: query,
+					type: "effects",
+					page: "1",
+					page_size: SEARCH_PAGE_SIZE.toString(),
+					commercial_only: commercialOnly.toString(),
+				});
 				const response = await fetch(
-					`/api/sounds/search?q=${encodeURIComponent(query)}&type=effects&page=1`,
+					`/api/sounds/search?${searchParams.toString()}`,
 				);
 
 				if (!ignore) {
 					if (response.ok) {
 						const data = await response.json();
 						setSearchResults({ results: data.results });
-						setLastSearchQuery({ query: query });
+						setLastSearchQuery({ query });
 						setHasNextPage({ hasNext: !!data.next });
 						setTotalCount({ count: data.count });
 						setCurrentPage({ page: 1 });
 					} else {
-						setSearchError({ error: `Search failed: ${response.status}` });
+						console.error("Failed to search sounds:", response.status);
+						setSearchError({ error: editorT.sounds.loadFailed });
 					}
 				}
-			} catch (err) {
+			} catch (error) {
 				if (!ignore) {
-					setSearchError({
-						error: err instanceof Error ? err.message : "Search failed",
-					});
+					console.error("Failed to search sounds:", error);
+					setSearchError({ error: editorT.sounds.loadFailed });
 				}
 			} finally {
 				if (!ignore) {
@@ -130,8 +204,11 @@ export function useSoundSearch({
 		};
 	}, [
 		query,
-		lastSearchQuery,
-		searchResults.length,
+		commercialOnly,
+		hasLoaded,
+		setTopSoundEffects,
+		setLoading,
+		setError,
 		setSearchResults,
 		setSearching,
 		setSearchError,
@@ -140,6 +217,7 @@ export function useSoundSearch({
 		setHasNextPage,
 		setTotalCount,
 		resetPagination,
+		editorT.sounds.loadFailed,
 	]);
 
 	return {
@@ -150,5 +228,6 @@ export function useSoundSearch({
 		hasNextPage,
 		isLoadingMore,
 		totalCount,
+		topSoundEffects,
 	};
 }

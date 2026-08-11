@@ -22,7 +22,6 @@ import { useEditor } from "@/editor/use-editor";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@/components/ui/button";
-import { ChangelogNotification } from "@/changelog/components/changelog-notification";
 import {
 	createPreviewOverlayControl,
 	isPreviewOverlayVisible,
@@ -34,10 +33,10 @@ import {
 	bookmarkNotesPreviewOverlay,
 	getBookmarkPreviewOverlaySource,
 } from "@/timeline/bookmarks/index";
+import { useI18n } from "@/i18n/use-i18n";
 
 export default function Editor() {
-	const params = useParams();
-	const projectId = params.project_id as string;
+	const { project_id: projectId } = useParams<{ project_id: string }>();
 
 	return (
 		<MobileGate>
@@ -50,7 +49,6 @@ export default function Editor() {
 					</div>
 					<Onboarding />
 					<MigrationDialog />
-					<ChangelogNotification />
 				</div>
 			</EditorProvider>
 		</MobileGate>
@@ -60,17 +58,18 @@ export default function Editor() {
 function DegradedRendererBanner() {
 	const isDegraded = useEditor((e) => e.renderer.isDegraded);
 	const [dismissed, setDismissed] = useState(false);
+	const { t } = useI18n();
 	if (!isDegraded || dismissed) return null;
 
 	return (
 		<div className="bg-accent border-b h-9 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-			<span>For the best experience, open OpenCut in Chrome.</span>
+			<span>{t.editor.chromeRecommendation.message}</span>
 			<Button
 				variant="text"
 				size="icon"
 				className="p-0 w-auto [&_svg]:size-3.5"
 				onClick={() => setDismissed(true)}
-				aria-label="Dismiss"
+				aria-label={t.editor.chromeRecommendation.dismiss}
 			>
 				<HugeiconsIcon icon={Cancel01Icon} />
 			</Button>

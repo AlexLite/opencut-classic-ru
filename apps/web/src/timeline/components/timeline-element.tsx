@@ -44,7 +44,6 @@ import type { MediaAsset } from "@/media/types";
 import { mediaSupportsAudio } from "@/media/media-utils";
 import {
 	canToggleSourceAudio,
-	getSourceAudioActionLabel,
 	isSourceAudioSeparated,
 } from "@/timeline/audio-separation";
 import { buildWaveformGainSamples, isElementMuted } from "@/timeline/audio-state";
@@ -89,6 +88,7 @@ import {
 	getExpansionHeight,
 	type ExpandedRow,
 } from "./expanded-layout";
+import { useI18n } from "@/i18n/use-i18n";
 
 const KEYFRAME_INDICATOR_MIN_WIDTH_PX = 40;
 const ELEMENT_RING_WIDTH_PX = 1.5;
@@ -232,6 +232,7 @@ export function TimelineElement({
 }: TimelineElementProps) {
 	const mediaAssets = useEditor((e) => e.media.getAssets());
 	const { selectedElements } = useElementSelection();
+	const { timelineT } = useI18n();
 	const requestRevealMedia = useAssetsPanelStore((s) => s.requestRevealMedia);
 	const { renderElement } = useElementPreview({
 		trackId: track.id,
@@ -340,12 +341,11 @@ export function TimelineElement({
 		selectedElements.length === 1 &&
 		isCurrentElementSelected &&
 		canToggleSourceAudio(element, mediaAsset);
-	const sourceAudioLabel =
-		element.type === "video"
-			? getSourceAudioActionLabel({ element })
-			: "Extract audio";
 	const isElementSourceAudioSeparated =
 		element.type === "video" && isSourceAudioSeparated({ element });
+	const sourceAudioLabel = isElementSourceAudioSeparated
+		? timelineT.toolbar.restoreAudio
+		: timelineT.toolbar.extractAudio;
 	const hasKeyframes = elementKeyframes.length > 0;
 	const expansionHeight = getExpansionHeight({ rows: expandedRows });
 	const baseTrackHeight = getTrackHeight({ type: track.type });
@@ -427,7 +427,7 @@ export function TimelineElement({
 						action="split"
 						icon={<HugeiconsIcon icon={ScissorIcon} />}
 					>
-						Split
+						{timelineT.element.split}
 					</ActionMenuItem>
 					<CopyMenuItem />
 					{selectedElements.length === 1 && (
@@ -435,7 +435,7 @@ export function TimelineElement({
 							action="duplicate-selected"
 							icon={<HugeiconsIcon icon={Copy01Icon} />}
 						>
-							Duplicate
+							{timelineT.element.duplicate}
 						</ActionMenuItem>
 					)}
 					{canElementHaveAudio(element) && hasAudio && (
@@ -447,13 +447,7 @@ export function TimelineElement({
 					)}
 					{canToggleCurrentSourceAudio && (
 						<ContextMenuItem
-							icon={
-								<HugeiconsIcon
-									icon={
-										isElementSourceAudioSeparated ? ScissorIcon : ScissorIcon
-									}
-								/>
-							}
+							icon={<HugeiconsIcon icon={ScissorIcon} />}
 							onClick={(event: React.MouseEvent) => {
 								event.stopPropagation();
 								invokeAction("toggle-source-audio");
@@ -477,7 +471,9 @@ export function TimelineElement({
 								toggleElementExpanded(element.id);
 							}}
 						>
-							{isExpanded ? "Collapse keyframes" : "Expand keyframes"}
+							{isExpanded
+								? timelineT.element.collapseKeyframes
+								: timelineT.element.expandKeyframes}
 						</ContextMenuItem>
 					)}
 					{selectedElements.length === 1 && hasMediaId(element) && (
@@ -488,13 +484,13 @@ export function TimelineElement({
 									handleRevealInMedia({ event })
 								}
 							>
-								Reveal media
+								{timelineT.element.revealMedia}
 							</ContextMenuItem>
 							<ContextMenuItem
 								icon={<HugeiconsIcon icon={Exchange01Icon} />}
 								disabled
 							>
-								Replace media
+								{timelineT.element.replaceMedia}
 							</ContextMenuItem>
 						</>
 					)}
@@ -639,6 +635,7 @@ function ResizeHandle({
 		side: "left" | "right";
 	}) => void;
 }) {
+	const { timelineT } = useI18n();
 	const isLeft = side === "left";
 	return (
 		<button
@@ -649,8 +646,12 @@ function ResizeHandle({
 			)}
 			onMouseDown={(event) => onResizeStart({ event, element, track, side })}
 			onClick={(event) => event.stopPropagation()}
-			aria-label={`${isLeft ? "Left" : "Right"} resize handle`}
-		></button>
+			aria-label={
+				isLeft
+					? timelineT.accessibility.leftResizeHandle
+					: timelineT.accessibility.rightResizeHandle
+			}
+		/>
 	);
 }
 
@@ -686,6 +687,7 @@ function KeyframeIndicators({
 	}) => number;
 }) {
 	const { isKeyframeSelected } = useKeyframeSelection();
+	const { timelineT } = useI18n();
 	const orderedKeyframes = indicators.flatMap(
 		(indicator) => indicator.keyframes,
 	);
@@ -722,7 +724,7 @@ function KeyframeIndicators({
 						indicatorTime: indicator.time,
 					})
 				}
-				aria-label="Select keyframe"
+				aria-label={timelineT.accessibility.selectKeyframe}
 			>
 				<HugeiconsIcon
 					icon={KeyframeIcon}
@@ -789,6 +791,7 @@ function ExpandedKeyframeLanes({
 	}) => number;
 }) {
 	const { isKeyframeSelected } = useKeyframeSelection();
+	const { timelineT } = useI18n();
 
 	const orderedKeyframes = useMemo(
 		() =>
@@ -875,7 +878,7 @@ function ExpandedKeyframeLanes({
 											indicatorTime: kf.time,
 										});
 									}}
-									aria-label="Select keyframe"
+									aria-label={timelineT.accessibility.selectKeyframe}
 								>
 									<HugeiconsIcon
 										icon={KeyframeIcon}
@@ -1059,6 +1062,7 @@ function EffectsButton({
 	track: TimelineTrack;
 }) {
 	const editor = useEditor();
+	const { timelineT } = useI18n();
 	const setActiveTab = usePropertiesStore((s) => s.setActiveTab);
 
 	const handleClick = (event: React.MouseEvent) => {
@@ -1075,6 +1079,8 @@ function EffectsButton({
 			className="flex shrink-0 justify-center text-white cursor-pointer"
 			onMouseDown={(event) => event.stopPropagation()}
 			onClick={handleClick}
+			aria-label={timelineT.accessibility.effects}
+			title={timelineT.accessibility.effects}
 		>
 			<HugeiconsIcon icon={MagicWand05Icon} size={12} />
 		</button>
@@ -1182,12 +1188,13 @@ function ElementContent({ element, track }: ElementContentProps) {
 }
 
 function CopyMenuItem() {
+	const { timelineT } = useI18n();
 	return (
 		<ActionMenuItem
 			action="copy-selected"
 			icon={<HugeiconsIcon icon={Copy01Icon} />}
 		>
-			Copy
+			{timelineT.element.copy}
 		</ActionMenuItem>
 	);
 }
@@ -1201,6 +1208,7 @@ function MuteMenuItem({
 	isCurrentElementSelected: boolean;
 	isMuted: boolean;
 }) {
+	const { timelineT } = useI18n();
 	const getIcon = () => {
 		if (isMultipleSelected && isCurrentElementSelected) {
 			return <HugeiconsIcon icon={VolumeMute02Icon} />;
@@ -1214,7 +1222,7 @@ function MuteMenuItem({
 
 	return (
 		<ActionMenuItem action="toggle-elements-muted-selected" icon={getIcon()}>
-			{isMuted ? "Unmute" : "Mute"}
+			{isMuted ? timelineT.element.unmute : timelineT.element.mute}
 		</ActionMenuItem>
 	);
 }
@@ -1228,6 +1236,7 @@ function VisibilityMenuItem({
 	isMultipleSelected: boolean;
 	isCurrentElementSelected: boolean;
 }) {
+	const { timelineT } = useI18n();
 	const isHidden = canElementBeHidden(element) && element.hidden;
 
 	const getIcon = () => {
@@ -1246,7 +1255,7 @@ function VisibilityMenuItem({
 			action="toggle-elements-visibility-selected"
 			icon={getIcon()}
 		>
-			{isHidden ? "Show" : "Hide"}
+			{isHidden ? timelineT.element.show : timelineT.element.hide}
 		</ActionMenuItem>
 	);
 }
@@ -1262,15 +1271,24 @@ function DeleteMenuItem({
 	elementType: TimelineElementType["type"];
 	selectedCount: number;
 }) {
+	const { timelineT, plural } = useI18n();
+	const deleteLabel =
+		isMultipleSelected && isCurrentElementSelected
+			? `${timelineT.element.deleteMultiplePrefix} ${selectedCount} ${plural(
+					selectedCount,
+					timelineT.element.elementCountForms,
+				)}`
+			: elementType === "text"
+				? timelineT.element.deleteText
+				: timelineT.element.deleteClip;
+
 	return (
 		<ActionMenuItem
 			action="delete-selected"
 			variant="destructive"
 			icon={<HugeiconsIcon icon={Delete02Icon} />}
 		>
-			{isMultipleSelected && isCurrentElementSelected
-				? `Delete ${selectedCount} elements`
-				: `Delete ${elementType === "text" ? "text" : "clip"}`}
+			{deleteLabel}
 		</ActionMenuItem>
 	);
 }

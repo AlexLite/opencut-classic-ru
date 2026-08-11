@@ -24,9 +24,11 @@ import {
 import { canDeleteScene, getMainScene } from "@/timeline/scenes";
 import { toast } from "sonner";
 import { useEditor } from "@/editor/use-editor";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function ScenesView({ children }: { children: React.ReactNode }) {
 	const editor = useEditor();
+	const { editorT } = useI18n();
 	const scenes = editor.scenes.getScenes();
 	const currentScene = editor.scenes.getActiveScene();
 	const [isSelectMode, setIsSelectMode] = useState(false);
@@ -69,9 +71,13 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
 				continue;
 			}
 
-			const { canDelete, reason } = canDeleteScene({ scene });
+			const { canDelete } = canDeleteScene({ scene });
 			if (!canDelete) {
-				toast.error(reason || "Failed to delete scene");
+				toast.error(
+					scene.isMain
+						? editorT.scenes.cannotDeleteMain
+						: editorT.scenes.failedToDelete,
+				);
 				continue;
 			}
 
@@ -79,6 +85,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
 				await editor.scenes.deleteScene({ sceneId });
 			} catch (error) {
 				console.error("Failed to delete scene:", error);
+				toast.error(editorT.scenes.failedToDelete);
 			}
 		}
 		setSelectedScenes(new Set());
@@ -96,12 +103,14 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
 			<SheetContent>
 				<SheetHeader>
 					<SheetTitle>
-						{isSelectMode ? `Select scenes (${selectedScenes.size})` : "Scenes"}
+						{isSelectMode
+							? `${editorT.scenes.selectScenes} (${selectedScenes.size})`
+							: editorT.scenes.title}
 					</SheetTitle>
 					<SheetDescription>
 						{isSelectMode
-							? "Select scenes to delete"
-							: "Switch between scenes in your project"}
+							? editorT.scenes.selectToDelete
+							: editorT.scenes.switchDescription}
 					</SheetDescription>
 				</SheetHeader>
 				<div className="flex flex-col gap-4 py-4">
@@ -113,7 +122,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
 							onClick={handleSelectMode}
 						>
 							<ListCheck />
-							{isSelectMode ? "Cancel" : "Select"}
+							{isSelectMode ? editorT.scenes.cancel : editorT.scenes.select}
 						</Button>
 						{isSelectMode && (
 							<DeleteDialog
@@ -128,7 +137,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
 										size="sm"
 									>
 										<Trash2 />
-										Delete ({selectedScenes.size})
+										{editorT.scenes.delete} ({selectedScenes.size})
 									</Button>
 								}
 							/>
@@ -136,7 +145,7 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
 					</div>
 					{scenes.length === 0 ? (
 						<div className="text-muted-foreground text-sm">
-							No scenes available
+							{editorT.scenes.noScenes}
 						</div>
 					) : (
 						<div className="space-y-2">
@@ -155,7 +164,11 @@ export function ScenesView({ children }: { children: React.ReactNode }) {
 									)}
 									onClick={() => handleSceneSwitch(scene.id)}
 								>
-									<span>{scene.name}</span>
+									<span>
+										{scene.isMain && scene.name === "Main scene"
+											? editorT.scenes.mainScene
+											: scene.name}
+									</span>
 									<div className="flex items-center gap-2">
 										{((isSelectMode && selectedScenes.has(scene.id)) ||
 											(!isSelectMode && currentScene?.id === scene.id)) && (
@@ -184,6 +197,7 @@ function DeleteDialog({
 	trigger: React.ReactNode;
 }) {
 	const [open, setOpen] = useState(false);
+	const { editorT, plural } = useI18n();
 
 	const handleDelete = () => {
 		onDelete();
@@ -195,22 +209,23 @@ function DeleteDialog({
 			<DialogTrigger asChild>{trigger}</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Delete Scenes</DialogTitle>
+					<DialogTitle>{editorT.scenes.deleteTitle}</DialogTitle>
 					<DialogDescription>
-						Are you sure you want to delete {count} scene
-						{count === 1 ? "" : "s"}? This action cannot be undone.
+						{editorT.scenes.deleteConfirmPrefix} {count}{" "}
+						{plural(count, editorT.scenes.sceneCountForms)}?{" "}
+						{editorT.scenes.deleteConfirmSuffix}
 					</DialogDescription>
 				</DialogHeader>
 				<DialogFooter>
 					<Button variant="outline" onClick={() => setOpen(false)}>
-						Cancel
+						{editorT.scenes.cancel}
 					</Button>
 					<Button
 						variant="destructive"
 						onClick={handleDelete}
 						disabled={disabled}
 					>
-						Delete
+						{editorT.scenes.delete}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

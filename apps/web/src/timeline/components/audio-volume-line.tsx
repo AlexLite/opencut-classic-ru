@@ -12,12 +12,12 @@ import { getElementVolume, hasAnimatedVolume } from "@/timeline/audio-state";
 import type { AudioElement } from "@/timeline/types";
 import {
 	clamp,
-	formatNumberForDisplay,
 	getFractionDigitsForStep,
 	isNearlyEqual,
 	snapToStep,
 } from "@/utils/math";
 import { cn } from "@/utils/ui";
+import { useI18n } from "@/i18n/use-i18n";
 
 const HIT_AREA_HEIGHT_PX = 14;
 const TOOLTIP_OFFSET_PX = 10;
@@ -57,6 +57,7 @@ export function AudioVolumeLine({
 	trackId: string;
 }) {
 	const editor = useEditor();
+	const { timelineT, formatNumber } = useI18n();
 	const surfaceRef = useRef<HTMLDivElement>(null);
 	const activePointerIdRef = useRef<number | null>(null);
 	const startVolumeRef = useRef(getElementVolume({ element }));
@@ -71,11 +72,10 @@ export function AudioVolumeLine({
 	const hasAnimatedEnvelope = hasAnimatedVolume({ element });
 	const currentVolume = getElementVolume({ element });
 	const lineTop = `${getLinePosFromDb({ db: currentVolume })}%`;
-
-	const volumeLabel = `${formatNumberForDisplay({
-		value: currentVolume,
-		fractionDigits: VOLUME_FRACTION_DIGITS,
-	})} dB`;
+	const normalizedVolume = Object.is(currentVolume, -0) ? 0 : currentVolume;
+	const volumeLabel = `${formatNumber(normalizedVolume, {
+		maximumFractionDigits: VOLUME_FRACTION_DIGITS,
+	})} ${timelineT.audio.decibelsShort}`;
 
 	const previewVolume = useCallback(
 		(nextVolume: number) => {
@@ -250,7 +250,7 @@ export function AudioVolumeLine({
 					onPointerUp={handlePointerUp}
 					onPointerCancel={handlePointerCancel}
 					onLostPointerCapture={handleLostPointerCapture}
-					title="Drag to adjust clip volume"
+					title={timelineT.audio.adjustClipVolume}
 				/>
 				{isDragging &&
 					tooltipClientPos &&

@@ -26,6 +26,7 @@ import {
 import { cn } from "@/utils/ui";
 import { Separator } from "@/components/ui/separator";
 import { useAssetsPanelStore } from "@/components/editor/panels/assets/assets-panel-store";
+import { useI18n } from "@/i18n/use-i18n";
 
 export function StandaloneEffectTab({
 	element,
@@ -34,6 +35,7 @@ export function StandaloneEffectTab({
 	element: EffectElement;
 	trackId: string;
 }) {
+	const { propertiesT } = useI18n();
 	const { renderElement, previewUpdates, commit } = useElementPreview({
 		trackId,
 		elementId: element.id,
@@ -56,7 +58,7 @@ export function StandaloneEffectTab({
 	return (
 		<div className="flex flex-col h-full">
 			<div className="border-b px-3.5 h-11 shrink-0 flex items-center">
-				<SectionTitle>Effect</SectionTitle>
+				<SectionTitle>{propertiesT.effects.standaloneTitle}</SectionTitle>
 			</div>
 			<EffectSection
 				effect={effect}
@@ -78,6 +80,7 @@ export function ClipEffectsTab({
 	const [dragIndex, setDragIndex] = useState<number | null>(null);
 	const [dropIndex, setDropIndex] = useState<number | null>(null);
 	const editor = useEditor();
+	const { propertiesT } = useI18n();
 	const { renderElement, previewUpdates, commit } = useElementPreview({
 		trackId,
 		elementId: element.id,
@@ -99,12 +102,11 @@ export function ClipEffectsTab({
 		(effectId: string) =>
 		(key: string) =>
 		(value: number | string | boolean) => {
-			const updatedEffects = (
-				(renderElement as VisualElement).effects ?? []
-			).map((existing) =>
-				existing.id !== effectId
-					? existing
-					: { ...existing, params: { ...existing.params, [key]: value } },
+			const updatedEffects = ((renderElement as VisualElement).effects ?? []).map(
+				(existing) =>
+					existing.id !== effectId
+						? existing
+						: { ...existing, params: { ...existing.params, [key]: value } },
 			);
 			previewUpdates({ effects: updatedEffects });
 		};
@@ -143,7 +145,7 @@ export function ClipEffectsTab({
 	return (
 		<div className="flex flex-col h-full">
 			<div className="border-b px-3.5 h-11 shrink-0 flex items-center">
-				<SectionTitle>Effects</SectionTitle>
+				<SectionTitle>{propertiesT.effects.title}</SectionTitle>
 			</div>
 			{effects.length === 0 ? (
 				<EmptyView />
@@ -154,10 +156,8 @@ export function ClipEffectsTab({
 						const isDragging = dragIndex === index;
 						const isDropTarget =
 							dropIndex === index && dragIndex !== null && dragIndex !== index;
-						const showTopDropIndicator =
-							isDropTarget && index < resolvedDragIndex;
-						const showBottomDropIndicator =
-							isDropTarget && index > resolvedDragIndex;
+						const showTopDropIndicator = isDropTarget && index < resolvedDragIndex;
+						const showBottomDropIndicator = isDropTarget && index > resolvedDragIndex;
 
 						return (
 							<li
@@ -205,6 +205,7 @@ export function ClipEffectsTab({
 
 function EmptyView() {
 	const setActiveTab = useAssetsPanelStore((s) => s.setActiveTab);
+	const { propertiesT } = useI18n();
 
 	return (
 		<div className="flex flex-col h-full items-center justify-center gap-4 text-center">
@@ -214,9 +215,9 @@ function EmptyView() {
 				strokeWidth={1}
 			/>
 			<div className="flex flex-col gap-2">
-				<h3 className="font-medium text-foreground">No effects</h3>
+				<h3 className="font-medium text-foreground">{propertiesT.effects.noEffects}</h3>
 				<p className="text-muted-foreground text-sm text-balance max-w-44">
-					Add effects to this layer from the Assets panel.
+					{propertiesT.effects.noEffectsDescription}
 				</p>
 			</div>
 			<Button
@@ -224,7 +225,7 @@ function EmptyView() {
 				size="sm"
 				onClick={() => setActiveTab("effects")}
 			>
-				Open effects
+				{propertiesT.effects.openEffects}
 			</Button>
 		</div>
 	);
@@ -246,6 +247,9 @@ function EffectSection({
 	onRemove?: () => void;
 }) {
 	const definition = effectsRegistry.get(effect.type);
+	const { assetsT, propertiesT } = useI18n();
+	const effectNames = assetsT.effects.names as Readonly<Record<string, string>>;
+	const effectName = effectNames[effect.type] ?? definition.name;
 
 	return (
 		<Section
@@ -260,7 +264,7 @@ function EffectSection({
 							<Button
 								variant={effect.enabled ? "secondary" : "ghost"}
 								size="icon"
-								aria-label={`Toggle ${definition.name}`}
+								aria-label={`${propertiesT.effects.toggleEffect}: ${effectName}`}
 								onClick={onToggle}
 							>
 								<HugeiconsIcon
@@ -270,7 +274,7 @@ function EffectSection({
 							<Button
 								variant="ghost"
 								size="icon"
-								aria-label={`Remove ${definition.name}`}
+								aria-label={`${propertiesT.effects.removeEffect}: ${effectName}`}
 								onClick={onRemove}
 							>
 								<HugeiconsIcon icon={Delete02Icon} />
@@ -282,7 +286,7 @@ function EffectSection({
 				<SectionTitle
 					className={cn(onToggle && !effect.enabled && "text-muted-foreground")}
 				>
-					{definition.name}
+					{effectName}
 				</SectionTitle>
 			</SectionHeader>
 			<SectionContent

@@ -8,7 +8,11 @@ import {
 } from "@/components/editor/panels/properties/hooks/use-keyframed-param-property";
 import type { ParamDefinition, ParamValues } from "@/params";
 import type { GraphicElement } from "@/timeline";
-import { graphicsRegistry, registerDefaultGraphics, resolveGraphicElementParamsAtTime } from "@/graphics";
+import {
+	graphicsRegistry,
+	registerDefaultGraphics,
+	resolveGraphicElementParamsAtTime,
+} from "@/graphics";
 import { useElementPreview } from "@/timeline/hooks/use-element-preview";
 import { useEditor } from "@/editor/use-editor";
 import {
@@ -24,6 +28,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { MinusSignIcon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { cn } from "@/utils/ui";
 import type { MediaTime } from "@/wasm";
+import { useI18n } from "@/i18n/use-i18n";
 
 registerDefaultGraphics();
 
@@ -37,6 +42,8 @@ export function GraphicTab({
 	trackId: string;
 }) {
 	const definition = graphicsRegistry.get(element.definitionId);
+	const { propertiesT } = useI18n();
+	const graphicNames = propertiesT.graphic.names as Readonly<Record<string, string>>;
 	const { localTime, isPlayheadWithinElementRange } = useElementPlayhead({
 		startTime: element.startTime,
 		duration: element.duration,
@@ -55,12 +62,13 @@ export function GraphicTab({
 
 	const shapeParams = definition.params.filter((p) => p.group !== "stroke");
 	const hasStrokeParams = definition.params.some((p) => p.group === "stroke");
+	const definitionName = graphicNames[definition.id] ?? definition.name;
 
 	return (
 		<div className="flex flex-col">
 			<Section collapsible sectionKey={`${element.id}:graphic`}>
 				<SectionHeader>
-					<SectionTitle>{definition.name}</SectionTitle>
+					<SectionTitle>{definitionName}</SectionTitle>
 				</SectionHeader>
 				<SectionContent>
 					<SectionFields>
@@ -91,6 +99,7 @@ function StrokeSection({
 	trackId: string;
 }) {
 	const editor = useEditor();
+	const { propertiesT } = useI18n();
 	const definition = graphicsRegistry.get(element.definitionId);
 	const { localTime, isPlayheadWithinElementRange } = useElementPlayhead({
 		startTime: element.startTime,
@@ -110,6 +119,9 @@ function StrokeSection({
 	const strokeParams = definition.params.filter((p) => p.group === "stroke");
 	const lastStrokeWidth = useRef(DEFAULT_STROKE_WIDTH);
 	const isStrokeEnabled = Number(element.params.strokeWidth ?? 0) > 0;
+	const toggleStrokeLabel = isStrokeEnabled
+		? propertiesT.graphic.disableStroke
+		: propertiesT.graphic.enableStroke;
 
 	const toggleStroke = () => {
 		if (isStrokeEnabled) {
@@ -158,6 +170,8 @@ function StrokeSection({
 							event.stopPropagation();
 							toggleStroke();
 						}}
+						aria-label={toggleStrokeLabel}
+						title={toggleStrokeLabel}
 					>
 						<HugeiconsIcon
 							icon={isStrokeEnabled ? MinusSignIcon : PlusSignIcon}
@@ -166,7 +180,7 @@ function StrokeSection({
 					</Button>
 				}
 			>
-				<SectionTitle>Stroke</SectionTitle>
+				<SectionTitle>{propertiesT.graphic.stroke}</SectionTitle>
 			</SectionHeader>
 			<SectionContent
 				className={cn(!isStrokeEnabled && "pointer-events-none opacity-50")}

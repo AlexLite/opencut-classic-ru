@@ -2,8 +2,15 @@
 
 import { cn } from "@/utils/ui";
 import { clamp } from "@/utils/math";
-import { useRef, useState, useLayoutEffect, type ComponentProps } from "react";
+import {
+	useCallback,
+	useRef,
+	useState,
+	useLayoutEffect,
+	type ComponentProps,
+} from "react";
 import { useFocusLock } from "@/hooks/use-focus-lock";
+import { useI18n } from "@/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowTurnBackwardIcon } from "@hugeicons/core-free-icons";
@@ -77,7 +84,6 @@ function scrubAcrossRanges({
 
 	while (remainingPixels !== 0) {
 		const direction = Math.sign(remainingPixels);
-
 		const range = getActiveRange({ value: currentValue, direction, ranges });
 		if (!range) break;
 
@@ -134,6 +140,7 @@ function NumberField({
 	ref,
 	...props
 }: NumberFieldProps & { ref?: React.Ref<HTMLInputElement> }) {
+	const { t } = useI18n();
 	const iconRef = useRef<HTMLButtonElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const ghostRef = useRef<HTMLSpanElement>(null);
@@ -142,6 +149,18 @@ function NumberField({
 	const [isInputFocused, setIsInputFocused] = useState(false);
 	const [suffixLeft, setSuffixLeft] = useState(0);
 	const ghostValue = Array.isArray(value) ? value.join(", ") : String(value ?? "");
+
+	const setInputRef = useCallback(
+		(node: HTMLInputElement | null) => {
+			inputRef.current = node;
+			if (typeof ref === "function") {
+				ref(node);
+			} else if (ref) {
+				ref.current = node;
+			}
+		},
+		[ref],
+	);
 
 	useLayoutEffect(() => {
 		if (!suffix) {
@@ -173,7 +192,6 @@ function NumberField({
 		iconRef.current?.requestPointerLock();
 
 		const handlePointerMove = (moveEvent: PointerEvent) => {
-			// first movementX after pointer lock often contains a bogus warp delta
 			if (!hasReceivedFirstMove) {
 				hasReceivedFirstMove = true;
 				return;
@@ -209,7 +227,7 @@ function NumberField({
 		<input
 			type={allowExpressions ? "text" : "number"}
 			inputMode={allowExpressions ? "decimal" : undefined}
-			ref={inputRef}
+			ref={setInputRef}
 			disabled={disabled}
 			value={value}
 			className="text-sm leading-none bg-transparent outline-none min-w-0 flex-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -256,7 +274,7 @@ function NumberField({
 					<button
 						ref={iconRef}
 						type="button"
-						aria-label="Drag to adjust value"
+						aria-label={t.common.dragToAdjustValue}
 						disabled={disabled}
 						className="text-muted-foreground [&_svg]:size-3.5! shrink-0 select-none pl-2.5 text-sm leading-none cursor-ew-resize"
 						onMouseDown={(event) => event.preventDefault()}
@@ -279,7 +297,6 @@ function NumberField({
 				{inputNode}
 				{suffix && (
 					<>
-						{/* Ghost mirrors value text to measure width for suffix positioning */}
 						<span
 							ref={ghostRef}
 							className="invisible absolute text-sm leading-none whitespace-pre pointer-events-none"
@@ -304,7 +321,7 @@ function NumberField({
 					<Button
 						variant="text"
 						size="text"
-						aria-label="Reset to default"
+						aria-label={t.common.resetToDefault}
 						onClick={onReset}
 					>
 						<HugeiconsIcon icon={ArrowTurnBackwardIcon} className="size-3.5!" />

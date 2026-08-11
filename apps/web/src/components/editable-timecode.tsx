@@ -6,6 +6,7 @@ import {
 	type FrameRate,
 	type TimeCodeFormat,
 } from "opencut-wasm";
+import { useI18n } from "@/i18n/use-i18n";
 import { cn } from "@/utils/ui";
 import {
 	parseMediaTimecode,
@@ -32,6 +33,7 @@ export function EditableTimecode({
 	className,
 	disabled = false,
 }: EditableTimecodeProps) {
+	const { uiT } = useI18n();
 	const [isEditing, setIsEditing] = useState(false);
 	const [inputValue, setInputValue] = useState("");
 	const [hasError, setHasError] = useState(false);
@@ -55,21 +57,14 @@ export function EditableTimecode({
 	};
 
 	const applyEdit = () => {
-		const parsedTime = parseMediaTimecode({
-			timeCode: inputValue,
-			format,
-			fps,
-		});
-
+		const parsedTime = parseMediaTimecode({ timeCode: inputValue, format, fps });
 		if (parsedTime == null) {
 			setHasError(true);
 			return;
 		}
-
 		const clampedTime = duration
 			? snapSeekMediaTime({ time: parsedTime, duration, fps })
 			: parsedTime;
-
 		onTimeChange?.({ time: clampedTime });
 		setIsEditing(false);
 		setInputValue("");
@@ -88,24 +83,17 @@ export function EditableTimecode({
 		}
 	};
 
-	const handleInputChange = ({
-		target,
-	}: React.ChangeEvent<HTMLInputElement>) => {
+	const handleInputChange = ({ target }: React.ChangeEvent<HTMLInputElement>) => {
 		setInputValue(target.value);
 		setHasError(false);
 	};
 
 	const handleBlur = () => {
-		if (!enterPressedRef.current && isEditing) {
-			applyEdit();
-		}
+		if (!enterPressedRef.current && isEditing) applyEdit();
 	};
 
-	const handleDisplayKeyDown = (
-		event: React.KeyboardEvent<HTMLButtonElement>,
-	) => {
+	const handleDisplayKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
 		if (disabled) return;
-
 		if (event.key === "Enter" || event.key === " ") {
 			event.preventDefault();
 			startEditing();
@@ -153,7 +141,7 @@ export function EditableTimecode({
 				disabled && "cursor-default hover:bg-transparent",
 				className,
 			)}
-			title={disabled ? undefined : "Click to edit time"}
+			title={disabled ? undefined : uiT.editableTimecode.clickToEdit}
 		>
 			{formattedTime}
 		</button>

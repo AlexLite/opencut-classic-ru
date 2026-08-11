@@ -31,6 +31,7 @@ import { dimensionToAspectRatio } from "@/utils/geometry";
 import { formatNumberForDisplay } from "@/utils/math";
 import { OcSquarePlusIcon } from "@/components/icons";
 import type { TCanvasSize } from "@/project/types";
+import { useI18n } from "@/i18n/use-i18n";
 
 type SettingsView = "project-info" | "background";
 
@@ -101,6 +102,7 @@ export function SettingsView() {
 	const editor = useEditor();
 	const activeProject = useEditor((e) => e.project.getActive());
 	const { canvasPresets } = useEditorStore();
+	const { t } = useI18n();
 	const currentCanvasSize = activeProject.settings.canvasSize;
 	const canvasSizeMode = activeProject.settings.canvasSizeMode ?? "preset";
 	const lastCustomCanvasSize =
@@ -222,8 +224,8 @@ export function SettingsView() {
 					}}
 				>
 					<TabsList>
-						<TabsTrigger value="project-info">Project info</TabsTrigger>
-						<TabsTrigger value="background">Background</TabsTrigger>
+						<TabsTrigger value="project-info">{t.settings.projectInfo}</TabsTrigger>
+						<TabsTrigger value="background">{t.settings.background}</TabsTrigger>
 					</TabsList>
 				</Tabs>
 			}
@@ -232,7 +234,7 @@ export function SettingsView() {
 				<div className="flex flex-col">
 					<Section showTopBorder={false}>
 						<SectionHeader>
-							<SectionTitle className="flex-1">Name</SectionTitle>
+							<SectionTitle className="flex-1">{t.settings.name}</SectionTitle>
 							<span className="text-sm truncate">
 								{activeProject.metadata.name}
 							</span>
@@ -240,16 +242,16 @@ export function SettingsView() {
 					</Section>
 					<Section showTopBorder={false}>
 						<SectionHeader className="justify-between">
-							<SectionTitle className="flex-1">Frame rate</SectionTitle>
-					<Select
-							value={String(Math.round(frameRateToFloat(activeProject.settings.fps)))}
-							onValueChange={(value) => {
-								const fps = floatToFrameRate(parseFloat(value));
-								editor.project.updateSettings({ settings: { fps } });
-							}}
+							<SectionTitle className="flex-1">{t.settings.frameRate}</SectionTitle>
+							<Select
+								value={String(Math.round(frameRateToFloat(activeProject.settings.fps)))}
+								onValueChange={(value) => {
+									const fps = floatToFrameRate(parseFloat(value));
+									editor.project.updateSettings({ settings: { fps } });
+								}}
 							>
 								<SelectTrigger className="bg-transparent border-none p-1 h-auto">
-									<SelectValue placeholder="Select a frame rate" />
+									<SelectValue placeholder={t.settings.selectFrameRate} />
 								</SelectTrigger>
 								<SelectContent>
 									{FPS_PRESETS.map((preset) => (
@@ -267,7 +269,7 @@ export function SettingsView() {
 						sectionKey="settings:aspect-ratio"
 					>
 						<SectionHeader>
-							<SectionTitle className="flex-1">Aspect ratio</SectionTitle>
+							<SectionTitle className="flex-1">{t.settings.aspectRatio}</SectionTitle>
 						</SectionHeader>
 						<SectionContent className="px-2 flex flex-col gap-1 pb-2">
 							{presetItems.map((preset) => (
@@ -286,16 +288,16 @@ export function SettingsView() {
 							<div className="pb-2">
 								<AspectRatioItem
 									key="custom"
-									label="Custom"
+									label={t.settings.custom}
 									previewIcon={<OcSquarePlusIcon />}
 									isSelected={isCustomSelected}
 									onClick={selectCustomCanvasSize}
 									uiOptions={
-										<div className=" flex items-center gap-2 text-foreground">
+										<div className="flex items-center gap-2 text-foreground">
 											<NumberField
 												value={widthDraft.displayValue}
 												className="w-full"
-												aria-label="Canvas width"
+												aria-label={t.settings.canvasWidth}
 												onFocus={widthDraft.onFocus}
 												onChange={widthDraft.onChange}
 												onBlur={widthDraft.onBlur}
@@ -303,7 +305,7 @@ export function SettingsView() {
 											<NumberField
 												value={heightDraft.displayValue}
 												className="w-full"
-												aria-label="Canvas height"
+												aria-label={t.settings.canvasHeight}
 												onFocus={heightDraft.onFocus}
 												onChange={heightDraft.onChange}
 												onBlur={heightDraft.onBlur}

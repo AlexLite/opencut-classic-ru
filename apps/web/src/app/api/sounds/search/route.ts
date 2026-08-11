@@ -12,7 +12,9 @@ const searchParamsSchema = z.object({
 		.enum(["downloads", "rating", "created", "score"])
 		.default("downloads"),
 	min_rating: z.coerce.number().min(0).max(5).default(3),
-	commercial_only: z.coerce.boolean().default(true),
+	commercial_only: z
+		.stringbool({ truthy: ["true"], falsy: ["false"] })
+		.default(true),
 });
 
 const freesoundResultSchema = z.object({
@@ -102,20 +104,17 @@ function applyEffectsFilters({
 	min_rating: number;
 	commercial_only: boolean;
 }) {
-	params.append("filter", "duration:[* TO 30.0]");
-	params.append("filter", `avg_rating:[${min_rating} TO *]`);
+	const filters = [
+		"duration:[* TO 30.0]",
+		`avg_rating:[${min_rating} TO *]`,
+		"(tag:sound-effect OR tag:sfx OR tag:foley OR tag:ambient OR tag:nature OR tag:mechanical OR tag:electronic OR tag:impact OR tag:whoosh OR tag:explosion)",
+	];
 
 	if (commercial_only) {
-		params.append(
-			"filter",
-			'license:("Attribution" OR "Creative Commons 0" OR "Attribution Noncommercial" OR "Attribution Commercial")',
-		);
+		filters.push('license:("Attribution" OR "Creative Commons 0")');
 	}
 
-	params.append(
-		"filter",
-		"tag:sound-effect OR tag:sfx OR tag:foley OR tag:ambient OR tag:nature OR tag:mechanical OR tag:electronic OR tag:impact OR tag:whoosh OR tag:explosion",
-	);
+	params.set("filter", filters.join(" "));
 }
 
 function transformFreesoundResult(
@@ -163,6 +162,7 @@ export async function GET(request: NextRequest) {
 			page_size: searchParams.get("page_size") || undefined,
 			sort: searchParams.get("sort") || undefined,
 			min_rating: searchParams.get("min_rating") || undefined,
+			commercial_only: searchParams.get("commercial_only") ?? undefined,
 		});
 
 		if (!validationResult.success) {
@@ -196,8 +196,7 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
-		const baseUrl = "https://freesound.org/apiv2/search/text/";
-
+		const baseUrl = "https://freesound.org/apiv2/search/";
 		const sortParam = buildSortParameter({ query, sort });
 
 		const params = new URLSearchParams({
@@ -241,7 +240,6 @@ export async function GET(request: NextRequest) {
 		}
 
 		const data = freesoundValidation.data;
-
 		const transformedResults = data.results.map(transformFreesoundResult);
 
 		const responseData = {

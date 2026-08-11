@@ -4,7 +4,7 @@ import * as React from "react";
 import { Toast as ToastPrimitives } from "radix-ui";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
-
+import { useI18n } from "@/i18n/use-i18n";
 import { cn } from "@/utils/ui";
 
 const ToastProvider = ToastPrimitives.Provider;
@@ -34,9 +34,7 @@ const toastVariants = cva(
 					"destructive group border-destructive/35 bg-destructive/15 text-destructive-foreground backdrop-blur-lg",
 			},
 		},
-		defaultVariants: {
-			variant: "default",
-		},
+		defaultVariants: { variant: "default" },
 	},
 );
 
@@ -44,15 +42,13 @@ const Toast = React.forwardRef<
 	React.ElementRef<typeof ToastPrimitives.Root>,
 	React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
 		VariantProps<typeof toastVariants>
->(({ className, variant, ...props }, ref) => {
-	return (
-		<ToastPrimitives.Root
-			ref={ref}
-			className={cn(toastVariants({ variant }), className)}
-			{...props}
-		/>
-	);
-});
+>(({ className, variant, ...props }, ref) => (
+	<ToastPrimitives.Root
+		ref={ref}
+		className={cn(toastVariants({ variant }), className)}
+		{...props}
+	/>
+));
 Toast.displayName = ToastPrimitives.Root.displayName;
 
 const ToastAction = React.forwardRef<
@@ -73,19 +69,25 @@ ToastAction.displayName = ToastPrimitives.Action.displayName;
 const ToastClose = React.forwardRef<
 	React.ElementRef<typeof ToastPrimitives.Close>,
 	React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
->(({ className, ...props }, ref) => (
-	<ToastPrimitives.Close
-		ref={ref}
-		className={cn(
-			"text-foreground/50 hover:text-foreground focus-visible::ring-1 group-[.destructive]:text-muted-foreground absolute top-1 right-1 rounded-md p-1 opacity-0 group-hover:opacity-100 hover:group-[.destructive]:text-red-50 focus:opacity-100 focus:outline-hidden focus-visible:group-[.destructive]:ring-red-400 focus-visible:group-[.destructive]:ring-offset-red-600",
-			className,
-		)}
-		toast-close=""
-		{...props}
-	>
-		<X className="size-4" />
-	</ToastPrimitives.Close>
-));
+>(({ className, ...props }, ref) => {
+	const { t } = useI18n();
+
+	return (
+		<ToastPrimitives.Close
+			ref={ref}
+			className={cn(
+				"text-foreground/50 hover:text-foreground focus-visible::ring-1 group-[.destructive]:text-muted-foreground absolute top-1 right-1 rounded-md p-1 opacity-0 group-hover:opacity-100 hover:group-[.destructive]:text-red-50 focus:opacity-100 focus:outline-hidden focus-visible:group-[.destructive]:ring-red-400 focus-visible:group-[.destructive]:ring-offset-red-600",
+				className,
+			)}
+			aria-label={t.common.close}
+			toast-close=""
+			{...props}
+		>
+			<X className="size-4" />
+			<span className="sr-only">{t.common.close}</span>
+		</ToastPrimitives.Close>
+	);
+});
 ToastClose.displayName = ToastPrimitives.Close.displayName;
 
 const ToastTitle = React.forwardRef<
@@ -113,7 +115,6 @@ const ToastDescription = React.forwardRef<
 ToastDescription.displayName = ToastPrimitives.Description.displayName;
 
 type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>;
-
 type ToastActionElement = React.ReactElement<typeof ToastAction>;
 
 export {
