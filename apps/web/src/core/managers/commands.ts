@@ -11,12 +11,16 @@ interface CommandHistoryEntry {
 }
 
 export class CommandManager {
-	public isRippleEnabled = false;
+	private isRippleEnabled = false;
 	private history: CommandHistoryEntry[] = [];
 	private redoStack: CommandHistoryEntry[] = [];
 	private reactors: Array<() => void> = [];
 
 	constructor(private editor: EditorCore) {}
+
+	setRippleEnabled({ enabled }: { enabled: boolean }): void {
+		this.isRippleEnabled = enabled;
+	}
 
 	execute({ command }: { command: Command }): Command {
 		const beforeTracks = this.isRippleEnabled
