@@ -27,11 +27,11 @@ export async function inspectVideoDecodeCapability({
 			throw new Error("No video track found in the file");
 		}
 
-		const [codec, decoderConfig] = await Promise.all([
-			videoTrack.getCodec(),
-			videoTrack.getDecoderConfig(),
-		]);
-		const codecInfo = inspectVideoCodec({ codec, decoderConfig });
+		const decoderConfig = await videoTrack.getDecoderConfig();
+		const codecInfo = inspectVideoCodec({
+			codec: videoTrack.codec,
+			decoderConfig,
+		});
 		const capability = await checkVideoDecoderCapability({ config: decoderConfig });
 
 		return { codecInfo, decoderConfig, capability };
