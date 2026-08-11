@@ -122,37 +122,20 @@ describe("i18n source hygiene", () => {
 
 describe("locale store", () => {
 	test("switches locale and persists the selection", async () => {
-		const existingStorage = globalThis.localStorage;
-		const storage = existingStorage ?? new MemoryStorage();
-		const installedMemoryStorage = existingStorage == null;
+		const storage = new MemoryStorage();
+		const { createLocaleStore } = await import("./store");
+		const useTestLocaleStore = createLocaleStore(storage);
 
-		if (installedMemoryStorage) {
-			Object.defineProperty(globalThis, "localStorage", {
-				configurable: true,
-				value: storage,
-			});
-		}
-		storage.clear();
+		expect(useTestLocaleStore.getState().locale).toBe("ru");
+		useTestLocaleStore.getState().setLocale("en");
+		expect(useTestLocaleStore.getState().locale).toBe("en");
 
-		try {
-			const { useLocaleStore } = await import("./store");
-
-			expect(useLocaleStore.getState().locale).toBe("ru");
-			useLocaleStore.getState().setLocale("en");
-			expect(useLocaleStore.getState().locale).toBe("en");
-
-			const persisted = storage.getItem("opencut-locale");
-			expect(persisted).not.toBeNull();
-			expect(JSON.parse(persisted ?? "{}")).toMatchObject({
-				state: { locale: "en" },
-				version: 1,
-			});
-		} finally {
-			storage.clear();
-			if (installedMemoryStorage) {
-				Reflect.deleteProperty(globalThis, "localStorage");
-			}
-		}
+		const persisted = storage.getItem("opencut-locale");
+		expect(persisted).not.toBeNull();
+		expect(JSON.parse(persisted ?? "{}")).toMatchObject({
+			state: { locale: "en" },
+			version: 1,
+		});
 	});
 });
 
