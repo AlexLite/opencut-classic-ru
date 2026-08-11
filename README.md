@@ -19,7 +19,7 @@ Thanks to [Vercel](https://vercel.com?utm_source=github-opencut&utm_campaign=oss
 ## Why?
 
 - **Privacy**: Your videos stay on your device
-- **Free features**: Most basic CapCut features are now paywalled 
+- **Free features**: Most basic CapCut features are now paywalled
 - **Simple**: People want editors that are easy to use - CapCut proved that
 
 ## Project Structure
@@ -127,13 +127,27 @@ bun add opencut-wasm
 
 ### Self-Hosting with Docker
 
-To run everything (including a production build of the app) in Docker:
+To run the complete stack, first create the Compose environment file:
+
+```bash
+cp docker.env.example .env
+```
+
+Before exposing the app beyond your own machine, replace `BETTER_AUTH_SECRET` in `.env` with a strong random value. For example:
+
+```bash
+openssl rand -hex 32
+```
+
+Then start the stack:
 
 ```bash
 docker compose up -d
 ```
 
-The app will be available at [http://localhost:3100](http://localhost:3100).
+The app will be available at [http://localhost:3100](http://localhost:3100). Database migrations run automatically before the web service starts. Postgres, Redis and the Redis HTTP bridge are bound to `127.0.0.1` by default; only the web port is published for remote access.
+
+Databuddy analytics is disabled by default. To opt in, set your own `NEXT_PUBLIC_DATABUDDY_CLIENT_ID` in `.env` and rebuild the web image.
 
 ## Contributing
 
@@ -159,4 +173,3 @@ See our [Contributing Guide](.github/CONTRIBUTING.md) for detailed setup instruc
 ---
 
 ![Star History Chart](https://api.star-history.com/svg?repos=opencut-app/opencut&type=Date)
-
