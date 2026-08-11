@@ -9,6 +9,7 @@ const webEnvSchema = z.object({
 	// Public
 	NEXT_PUBLIC_SITE_URL: z.url().default("http://localhost:3000"),
 	NEXT_PUBLIC_MARBLE_API_URL: z.url(),
+	NEXT_PUBLIC_DATABUDDY_CLIENT_ID: z.string().min(1).optional(),
 
 	// Server
 	DATABASE_URL: z.string().refine(
