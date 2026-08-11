@@ -45,7 +45,7 @@ ENV FREESOUND_CLIENT_ID=${FREESOUND_CLIENT_ID}
 ENV FREESOUND_API_KEY=${FREESOUND_API_KEY}
 
 WORKDIR /app/apps/web
-RUN node ./node_modules/next/dist/bin/next build
+RUN node ../../node_modules/next/dist/bin/next build
 
 FROM node:24-alpine AS runner
 WORKDIR /app
