@@ -2,7 +2,13 @@
 
 import { cn } from "@/utils/ui";
 import { clamp } from "@/utils/math";
-import { useRef, useState, useLayoutEffect, type ComponentProps } from "react";
+import {
+	useCallback,
+	useRef,
+	useState,
+	useLayoutEffect,
+	type ComponentProps,
+} from "react";
 import { useFocusLock } from "@/hooks/use-focus-lock";
 import { useI18n } from "@/i18n/use-i18n";
 import { Button } from "@/components/ui/button";
@@ -144,6 +150,18 @@ function NumberField({
 	const [suffixLeft, setSuffixLeft] = useState(0);
 	const ghostValue = Array.isArray(value) ? value.join(", ") : String(value ?? "");
 
+	const setInputRef = useCallback(
+		(node: HTMLInputElement | null) => {
+			inputRef.current = node;
+			if (typeof ref === "function") {
+				ref(node);
+			} else if (ref) {
+				ref.current = node;
+			}
+		},
+		[ref],
+	);
+
 	useLayoutEffect(() => {
 		if (!suffix) {
 			setSuffixLeft(0);
@@ -209,7 +227,7 @@ function NumberField({
 		<input
 			type={allowExpressions ? "text" : "number"}
 			inputMode={allowExpressions ? "decimal" : undefined}
-			ref={inputRef}
+			ref={setInputRef}
 			disabled={disabled}
 			value={value}
 			className="text-sm leading-none bg-transparent outline-none min-w-0 flex-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
