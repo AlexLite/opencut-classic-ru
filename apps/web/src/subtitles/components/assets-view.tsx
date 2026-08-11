@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { PanelView } from "@/components/editor/panels/assets/views/base-panel";
 import {
 	Select,
 	SelectContent,
@@ -9,242 +9,236 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { useMemo, useReducer, useRef, useState } from "react";
+import { extractTimelineAudio } from "@/media/mediabunny";
+import { useEditor } from "@/editor/use-editor";
+import { TRANSCRIPTION_DIAGNOSTICS_SCOPE } from "@/transcription/diagnostics";
+import { DEFAULT_TRANSCRIPTION_SAMPLE_RATE } from "@/transcription/audio";
+import { TRANSCRIPTION_LANGUAGES } from "@/transcription/supported-languages";
+import type {
+	CaptionChunk,
+	TranscriptionLanguage,
+	TranscriptionProgress,
+} from "@/transcription/types";
+import { transcriptionService } from "@/services/transcription/service";
+import { decodeAudioToFloat32 } from "@/media/audio";
+import { buildCaptionChunks } from "@/transcription/caption";
+import { insertCaptionChunksAsTextTrack } from "@/subtitles/insert";
+import { parseSubtitleFile } from "@/subtitles/parse";
 import { Spinner } from "@/components/ui/spinner";
-import { PanelView } from "@/components/editor/panels/assets/panel-view";
 import {
 	Section,
 	SectionContent,
 	SectionField,
 	SectionFields,
 } from "@/components/section";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { AlertCircleIcon, CloudUploadIcon } from "@hugeicons/core-free-icons";
-import { TRANSCRIPTION_LANGUAGES } from "@/transcription/languages";
-import { transcriptionService } from "@/transcription/service";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-	TRANSCRIPTION_DIAGNOSTIC_EVENT,
-	getTranscriptionDiagnosticsSnapshot,
-	type TranscriptionDiagnostic,
-} from "@/transcription/diagnostics";
-import { extractProjectAudio } from "@/services/renderer/scene-exporter";
-import { useEditor } from "@/editor/use-editor";
-import { parseSubtitleFile } from "@/subtitles/parse";
-import { insertSubtitleCues } from "@/subtitles/insert";
-import { useExternalStore } from "@/hooks/use-external-store";
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { DiagnosticSeverity } from "@/diagnostics/types";
 import { useI18n } from "@/i18n/use-i18n";
-import type { ProcessingState } from "@/subtitles/types";
 
-const PROCESSING_INITIAL_STATE: ProcessingState = {
+const DIAGNOSTIC_BUTTON_VARIANT: Record<
+	DiagnosticSeverity,
+	"caution" | "destructive-foreground"
+> = {
+	caution: "caution",
+	error: "destructive-foreground",
+};
+
+type ProcessingState =
+	| { status: "idle"; error: string | null; warnings: string[] }
+	| { status: "processing"; step: string };
+
+type ProcessingAction =
+	| { type: "start"; step: string }
+	| { type: "update_step"; step: string }
+	| { type: "succeed"; warnings: string[] }
+	| { type: "fail"; error: string };
+
+const IDLE_STATE: ProcessingState = {
 	status: "idle",
-	step: "",
 	error: null,
 	warnings: [],
 };
 
-const DIAGNOSTIC_BUTTON_VARIANT = {
-	info: "secondary",
-	warning: "warning",
-	error: "destructive",
-} as const;
-
+/* eslint-disable opencut/prefer-object-params -- React reducers must accept (state, action). */
 function processingReducer(
 	state: ProcessingState,
-	action:
-		| { type: "start"; step: string }
-		| { type: "step"; step: string }
-		| { type: "warnings"; warnings: string[] }
-		| { type: "finish" }
-		| { type: "fail"; error: string },
+	action: ProcessingAction,
 ): ProcessingState {
 	switch (action.type) {
 		case "start":
-			return {
-				status: "processing",
-				step: action.step,
-				error: null,
-				warnings: [],
-			};
-		case "step":
-			return { ...state, status: "processing", step: action.step };
-		case "warnings":
-			return { ...state, warnings: action.warnings };
-		case "finish":
-			return { ...state, status: "idle", step: "", error: null };
+			return { status: "processing", step: action.step };
+		case "update_step":
+			if (state.status !== "processing") return state;
+			return { status: "processing", step: action.step };
+		case "succeed":
+			return { status: "idle", error: null, warnings: action.warnings };
 		case "fail":
-			return { ...state, status: "idle", step: "", error: action.error };
+			return { status: "idle", error: action.error, warnings: [] };
 	}
 }
-
-function useProcessingState() {
-	const [state, setState] = useState(PROCESSING_INITIAL_STATE);
-
-	const dispatch = (
-		action:
-			| { type: "start"; step: string }
-			| { type: "step"; step: string }
-			| { type: "warnings"; warnings: string[] }
-			| { type: "finish" }
-			| { type: "fail"; error: string },
-	) => setState((currentState) => processingReducer(currentState, action));
-
-	return { state, dispatch };
-}
+/* eslint-enable opencut/prefer-object-params */
 
 export function Captions() {
+	const [selectedLanguage, setSelectedLanguage] =
+		useState<TranscriptionLanguage>("auto");
+	const [processing, dispatch] = useReducer(processingReducer, IDLE_STATE);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 	const editor = useEditor();
 	const { assetsT, locale } = useI18n();
 	const captionsT = assetsT.captions;
-	const { state: processing, dispatch } = useProcessingState();
-	const [selectedLanguage, setSelectedLanguage] = useState<string>("auto");
-	const fileInputRef = useRef<HTMLInputElement>(null);
-	const containerRef = useRef<HTMLDivElement>(null);
-	const activeDiagnostics = useExternalStore({
-		eventName: TRANSCRIPTION_DIAGNOSTIC_EVENT,
-		getSnapshot: getTranscriptionDiagnosticsSnapshot,
-	});
-	const isProcessing = processing.status === "processing";
 	const languageDisplayNames = useMemo(
 		() => new Intl.DisplayNames([locale], { type: "language" }),
 		[locale],
 	);
 
-	const getDiagnosticMessage = ({
-		id,
-		fallback,
-	}: {
-		id: TranscriptionDiagnostic["id"];
-		fallback: string;
-	}) => {
-		if (id === "transcription.no_audio") {
-			return captionsT.diagnostics.noAudio;
-		}
-		return fallback;
-	};
+	const isProcessing = processing.status === "processing";
 
-	const getAssWarningMessage = ({ warning }: { warning: string }) => {
-		const strippedTags = warning.match(
+	const activeDiagnostics = useEditor((e) =>
+		e.diagnostics.getActive({ scope: TRANSCRIPTION_DIAGNOSTICS_SCOPE }),
+	);
+
+	const localizeDiagnostic = ({ id, message }: { id: string; message: string }) =>
+		id === "transcription.no_audio" ? captionsT.diagnostics.noAudio : message;
+
+	const localizeParserWarning = (warning: string) => {
+		let match = warning.match(
 			/^Stripped unsupported ASS inline override tags from (\d+) subtitle cue\(s\)\.$/,
 		);
-		if (strippedTags) {
-			return `${captionsT.warnings.strippedTagsPrefix}${strippedTags[1]}${captionsT.warnings.strippedTagsSuffix}`;
+		if (match) {
+			return `${captionsT.warnings.assInlineTagsPrefix}${match[1]}${captionsT.warnings.assInlineTagsSuffix}`;
 		}
-		const eventEffects = warning.match(
-			/^Ignored ASS event effects in (\d+) subtitle cue\(s\)\.$/,
-		);
-		if (eventEffects) {
-			return `${captionsT.warnings.eventEffectsPrefix}${eventEffects[1]}${captionsT.warnings.eventEffectsSuffix}`;
+
+		match = warning.match(/^Ignored ASS event effects in (\d+) subtitle cue\(s\)\.$/);
+		if (match) {
+			return `${captionsT.warnings.assEffectsPrefix}${match[1]}${captionsT.warnings.assEffectsSuffix}`;
 		}
-		const missingStyles = warning.match(
+
+		match = warning.match(
 			/^Fell back to default subtitle styling for (\d+) cue\(s\) that referenced missing ASS styles\.$/,
 		);
-		if (missingStyles) {
-			return `${captionsT.warnings.missingStylesPrefix}${missingStyles[1]}${captionsT.warnings.missingStylesSuffix}`;
+		if (match) {
+			return `${captionsT.warnings.assMissingStylesPrefix}${match[1]}${captionsT.warnings.assMissingStylesSuffix}`;
 		}
-		const nonDialogue = warning.match(
-			/^Ignored (\d+) non-dialogue ASS event\(s\)\.$/,
-		);
-		if (nonDialogue) {
-			return `${captionsT.warnings.nonDialoguePrefix}${nonDialogue[1]}${captionsT.warnings.nonDialogueSuffix}`;
+
+		match = warning.match(/^Ignored (\d+) non-dialogue ASS event\(s\)\.$/);
+		if (match) {
+			return `${captionsT.warnings.assNonDialoguePrefix}${match[1]}${captionsT.warnings.assNonDialogueSuffix}`;
 		}
+
 		if (
 			warning ===
 			"Ignored unsupported ASS style features such as outline, shadow, rotation, or scaling."
 		) {
-			return captionsT.warnings.unsupportedStyles;
+			return captionsT.warnings.assUnsupportedStyles;
 		}
+
 		return warning;
 	};
 
+	const handleProgress = (progress: TranscriptionProgress) => {
+		if (progress.status === "loading-model") {
+			dispatch({
+				type: "update_step",
+				step: `${captionsT.steps.loadingModelPrefix}${Math.round(progress.progress)}%`,
+			});
+		} else if (progress.status === "transcribing") {
+			dispatch({ type: "update_step", step: captionsT.steps.transcribing });
+		}
+	};
+
+	const insertCaptions = ({
+		captions,
+	}: {
+		captions: CaptionChunk[];
+	}): boolean => {
+		const trackId = insertCaptionChunksAsTextTrack({ editor, captions });
+		return trackId !== null;
+	};
+
 	const handleGenerateTranscript = async () => {
-		if (isProcessing || activeDiagnostics.length > 0) return;
-
 		dispatch({ type: "start", step: captionsT.steps.extractingAudio });
-
 		try {
-			const activeProject = editor.project.getActive();
-			const activeScene = editor.scenes.getActiveScene();
-			const audioBlob = await extractProjectAudio({
-				project: activeProject,
-				scene: activeScene,
-				onProgress: () => undefined,
+			const audioBlob = await extractTimelineAudio({
+				tracks: editor.scenes.getActiveScene().tracks,
+				mediaAssets: editor.media.getAssets(),
+				totalDuration: editor.timeline.getTotalDuration(),
 			});
 
-			dispatch({ type: "step", step: captionsT.steps.preparingAudio });
-
-			const language = selectedLanguage === "auto" ? undefined : selectedLanguage;
-			const result = await transcriptionService.transcribe({
+			dispatch({ type: "update_step", step: captionsT.steps.preparingAudio });
+			const { samples } = await decodeAudioToFloat32({
 				audioBlob,
-				language,
-				onProgress: ({ step }) => {
-					const stepLabels: Record<string, string> = {
-						[captionsT.steps.loadingModel]: captionsT.steps.loadingModel,
-						[captionsT.steps.transcribing]: captionsT.steps.transcribing,
-						[captionsT.steps.generatingCaptions]: captionsT.steps.generatingCaptions,
-					};
-					dispatch({ type: "step", step: stepLabels[step] ?? step });
-				},
+				sampleRate: DEFAULT_TRANSCRIPTION_SAMPLE_RATE,
 			});
 
-			dispatch({ type: "step", step: captionsT.steps.generatingCaptions });
-			insertSubtitleCues({
-				editor,
-				cues: result.cues,
-				startTime: 0,
+			const result = await transcriptionService.transcribe({
+				audioData: samples,
+				language: selectedLanguage === "auto" ? undefined : selectedLanguage,
+				onProgress: handleProgress,
 			});
-			dispatch({ type: "finish" });
+
+			dispatch({
+				type: "update_step",
+				step: captionsT.steps.generatingCaptions,
+			});
+			const captionChunks = buildCaptionChunks({ segments: result.segments });
+
+			if (!insertCaptions({ captions: captionChunks })) {
+				dispatch({ type: "fail", error: captionsT.errors.noCaptions });
+				return;
+			}
+
+			dispatch({ type: "succeed", warnings: [] });
 		} catch (error) {
 			console.error("Transcription failed:", error);
-			dispatch({
-				type: "fail",
-				error: captionsT.errors.unexpected,
-			});
+			dispatch({ type: "fail", error: captionsT.errors.unexpected });
 		}
 	};
 
 	const handleImportClick = () => {
-		if (isProcessing) return;
 		fileInputRef.current?.click();
 	};
 
 	const handleImportFile = async ({ file }: { file: File }) => {
 		dispatch({ type: "start", step: captionsT.steps.readingSubtitle });
-
 		try {
-			const result = await parseSubtitleFile({ file });
-			if (result.cues.length === 0) {
-				throw new Error("Unsupported subtitle format");
+			const input = await file.text();
+			const result = parseSubtitleFile({
+				fileName: file.name,
+				input,
+			});
+
+			if (result.captions.length === 0) {
+				dispatch({ type: "fail", error: captionsT.errors.noValidCues });
+				return;
 			}
 
-			dispatch({ type: "step", step: captionsT.steps.importingCaptions });
-			const malformedCount = result.malformedCueCount;
-			const warnings = result.warnings.map((warning) =>
-				getAssWarningMessage({ warning }),
-			);
-			if (malformedCount > 0) {
-				warnings.unshift(
-					`${captionsT.warnings.malformedPrefix}${malformedCount}${captionsT.warnings.malformedSuffix}`,
+			dispatch({ type: "update_step", step: captionsT.steps.importingSubtitles });
+
+			if (!insertCaptions({ captions: result.captions })) {
+				dispatch({ type: "fail", error: captionsT.errors.noCaptions });
+				return;
+			}
+
+			const nextWarnings = result.warnings.map(localizeParserWarning);
+			if (result.skippedCueCount > 0) {
+				nextWarnings.unshift(
+					`${captionsT.warnings.importedPrefix}${result.captions.length}${captionsT.warnings.importedMiddle}${result.skippedCueCount}${captionsT.warnings.importedSuffix}`,
 				);
 			}
-			dispatch({ type: "warnings", warnings });
-			insertSubtitleCues({
-				editor,
-				cues: result.cues,
-				startTime: editor.playback.getCurrentTime(),
-			});
-			dispatch({ type: "finish" });
+
+			dispatch({ type: "succeed", warnings: nextWarnings });
 		} catch (error) {
 			console.error("Subtitle import failed:", error);
-			const message =
-				error instanceof Error && error.message === "Unsupported subtitle format"
-					? captionsT.errors.unsupportedFormat
-					: captionsT.errors.unexpected;
-			dispatch({ type: "fail", error: message });
+			dispatch({ type: "fail", error: captionsT.errors.unexpected });
 		}
 	};
 
@@ -287,10 +281,7 @@ export function Captions() {
 					<div className="flex items-center gap-1.5">
 						{!isProcessing &&
 							activeDiagnostics.map((diagnostic) => {
-								const diagnosticMessage = getDiagnosticMessage({
-									id: diagnostic.id,
-									fallback: diagnostic.message,
-								});
+								const diagnosticMessage = localizeDiagnostic(diagnostic);
 								return (
 									<Tooltip key={diagnostic.id}>
 										<TooltipTrigger asChild>
