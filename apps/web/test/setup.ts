@@ -1,5 +1,37 @@
 import { mock } from "bun:test";
 
+class TestOffscreenCanvas {
+	constructor(
+		readonly width: number,
+		readonly height: number,
+	) {}
+
+	getContext(contextId: string) {
+		if (contextId !== "2d") return null;
+
+		return {
+			font: "",
+			textBaseline: "alphabetic",
+			letterSpacing: "0px",
+			save() {},
+			restore() {},
+			measureText(text: string) {
+				return {
+					width: text.length * 10,
+					actualBoundingBoxAscent: 8,
+					actualBoundingBoxDescent: 2,
+				} as TextMetrics;
+			},
+		} as unknown as OffscreenCanvasRenderingContext2D;
+	}
+}
+
+Object.defineProperty(globalThis, "OffscreenCanvas", {
+	configurable: true,
+	writable: true,
+	value: TestOffscreenCanvas,
+});
+
 const TICKS_PER_SECOND = 120_000;
 const TICKS_PER_CENTISECOND = TICKS_PER_SECOND / 100;
 
