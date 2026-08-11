@@ -99,7 +99,7 @@ describe("i18n dictionaries", () => {
 });
 
 describe("i18n source hygiene", () => {
-	test("keeps Cyrillic text inside locale dictionaries", async () => {
+	test("rejects Cyrillic text outside locale dictionaries", async () => {
 		const sourceRoot = join(process.cwd(), "src");
 		const localeDirectory = `${sep}i18n${sep}locales${sep}`;
 		const sourceFiles = (await collectSourceFiles(sourceRoot)).filter(
