@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { ClockIcon } from "lucide-react";
 import {
@@ -118,6 +118,8 @@ function FeedbackPopoverContent({ onClose }: { onClose: () => void }) {
 	const form = useForm<FeedbackFormValues>({
 		defaultValues: { message: "" },
 	});
+	const message = useWatch({ control: form.control, name: "message" });
+	const hasMessage = Boolean(message?.trim());
 
 	async function handleSubmit(values: FeedbackFormValues) {
 		await submit({
@@ -190,7 +192,7 @@ function FeedbackPopoverContent({ onClose }: { onClose: () => void }) {
 							<span />
 						)}
 						<div className="flex gap-2">
-							{!form.watch("message").trim() && (
+							{!hasMessage && (
 								<Button
 									type="button"
 									variant="outline"
@@ -203,7 +205,7 @@ function FeedbackPopoverContent({ onClose }: { onClose: () => void }) {
 							<Button
 								type="submit"
 								size="sm"
-								disabled={isSubmitting || !form.watch("message").trim()}
+								disabled={isSubmitting || !hasMessage}
 							>
 								{isSubmitting ? <Spinner /> : editorT.feedback.send}
 							</Button>
