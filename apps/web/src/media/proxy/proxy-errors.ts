@@ -6,6 +6,9 @@ export type LocalProxyFailureCode =
 	| "worker-unavailable";
 
 export class LocalProxyError extends Error {
+	// Error subclasses follow the platform Error(message, options) shape so callers
+	// can use this type as a normal Error while retaining the local failure code.
+	// eslint-disable-next-line opencut/prefer-object-params
 	constructor(
 		message: string,
 		public readonly code: LocalProxyFailureCode,
