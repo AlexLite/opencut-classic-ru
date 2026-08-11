@@ -30,10 +30,27 @@ interface FeedbackFormValues {
 	message: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+function isFeedbackEntry(value: unknown): value is FeedbackEntry {
+	return (
+		isRecord(value) &&
+		typeof value.id === "string" &&
+		typeof value.message === "string" &&
+		typeof value.createdAt === "string"
+	);
+}
+
 function readHistory(): FeedbackEntry[] {
 	try {
 		const stored = localStorage.getItem(HISTORY_KEY);
-		return stored ? (JSON.parse(stored) as FeedbackEntry[]) : [];
+		if (!stored) return [];
+
+		const parsed: unknown = JSON.parse(stored);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter(isFeedbackEntry).slice(0, MAX_HISTORY);
 	} catch {
 		return [];
 	}
@@ -73,8 +90,12 @@ function useFeedback() {
 				throw new Error(`Feedback request failed with status ${res.status}`);
 			}
 
-			const { entry } = await res.json();
-			const next = [entry, ...entries].slice(0, MAX_HISTORY);
+			const responseData: unknown = await res.json();
+			if (!isRecord(responseData) || !isFeedbackEntry(responseData.entry)) {
+				throw new Error("Feedback response has an invalid shape");
+			}
+
+			const next = [responseData.entry, ...entries].slice(0, MAX_HISTORY);
 			setEntries(next);
 			writeHistory({ entries: next });
 			onSuccess();
