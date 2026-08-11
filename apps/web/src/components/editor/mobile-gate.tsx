@@ -11,6 +11,7 @@ import { useI18n } from "@/i18n/use-i18n";
 const STORAGE_KEY = "mobile-acknowledged";
 const MOBILE_QUERY = "(max-width: 1023px)";
 const LOCAL_CHANGE_EVENT = "opencut-mobile-gate-change";
+let sessionAcknowledged = false;
 
 interface MobileGateProps {
 	children: React.ReactNode;
@@ -34,11 +35,11 @@ function subscribe(onStoreChange: () => void) {
 }
 
 function getSnapshot() {
-	let acknowledged = false;
+	let acknowledged = sessionAcknowledged;
 	try {
-		acknowledged = localStorage.getItem(STORAGE_KEY) === "true";
+		acknowledged ||= localStorage.getItem(STORAGE_KEY) === "true";
 	} catch {
-		// localStorage unavailable
+		// localStorage unavailable; session acknowledgement still works.
 	}
 	return window.matchMedia(MOBILE_QUERY).matches && !acknowledged;
 }
@@ -60,10 +61,11 @@ export function MobileGate({ children }: MobileGateProps) {
 	if (!show) return <>{children}</>;
 
 	const handleContinue = () => {
+		sessionAcknowledged = true;
 		try {
 			localStorage.setItem(STORAGE_KEY, "true");
 		} catch {
-			// Continue for this navigation even when localStorage is unavailable.
+			// Persisting the acknowledgement is optional for this session.
 		}
 		window.dispatchEvent(new Event(LOCAL_CHANGE_EVENT));
 	};
