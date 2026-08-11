@@ -278,16 +278,16 @@ export class VideoCache {
 			const decoderCapability = await checkVideoDecoderCapability({
 				config: decoderConfig,
 			});
-			if (!decoderCapability.supported || !decoderCapability.hardwareAcceleration) {
+			if (!decoderCapability.supported) {
 				throw new Error("Video stream not supported for WebCodecs decoding");
 			}
 
+			// Mediabunny 1.41 CanvasSink does not expose decoderOptions yet.
+			// Capability probing still checks prefer-hardware first; the actual sink
+			// uses the decoder policy available in this installed Mediabunny version.
 			const sink = new CanvasSink(videoTrack, {
 				poolSize: 3,
 				fit: "contain",
-				decoderOptions: {
-					hardwareAcceleration: decoderCapability.hardwareAcceleration,
-				},
 			});
 
 			this.sinks.set(mediaId, {
