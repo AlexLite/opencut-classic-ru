@@ -238,7 +238,13 @@ function FeedbackPopoverContent({ onClose }: { onClose: () => void }) {
 	);
 }
 
-function relativeDate(iso: string, intlLocale: string): string {
+function relativeDate({
+	iso,
+	intlLocale,
+}: {
+	iso: string;
+	intlLocale: string;
+}): string {
 	const diff = Date.now() - new Date(iso).getTime();
 	const mins = Math.floor(diff / 60_000);
 	const relative = new Intl.RelativeTimeFormat(intlLocale, {
@@ -265,7 +271,7 @@ function FeedbackEntryItem({ entry }: { entry: FeedbackEntry }) {
 				{entry.message}
 			</p>
 			<span className="mt-1 block text-[11px] text-muted-foreground/50">
-				{relativeDate(entry.createdAt, intlLocale)}
+				{relativeDate({ iso: entry.createdAt, intlLocale })}
 			</span>
 		</div>
 	);
