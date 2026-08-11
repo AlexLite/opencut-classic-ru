@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const optionalNonEmptyString = z.preprocess(
+	(value) => (value === "" ? undefined : value),
+	z.string().min(1).optional(),
+);
+
 const webEnvSchema = z.object({
 	// Node
 	NODE_ENV: z.enum(["development", "production", "test"]),
@@ -9,7 +14,7 @@ const webEnvSchema = z.object({
 	// Public
 	NEXT_PUBLIC_SITE_URL: z.url().default("http://localhost:3000"),
 	NEXT_PUBLIC_MARBLE_API_URL: z.url(),
-	NEXT_PUBLIC_DATABUDDY_CLIENT_ID: z.string().min(1).optional(),
+	NEXT_PUBLIC_DATABUDDY_CLIENT_ID: optionalNonEmptyString,
 
 	// Server
 	DATABASE_URL: z.string().refine(
