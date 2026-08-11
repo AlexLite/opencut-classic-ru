@@ -22,7 +22,6 @@ import { useEditor } from "@/editor/use-editor";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@/components/ui/button";
-import { ChangelogNotification } from "@/changelog/components/changelog-notification";
 import {
 	createPreviewOverlayControl,
 	isPreviewOverlayVisible,
@@ -37,8 +36,7 @@ import {
 import { useI18n } from "@/i18n/use-i18n";
 
 export default function Editor() {
-	const params = useParams();
-	const projectId = params.project_id as string;
+	const { project_id: projectId } = useParams<{ project_id: string }>();
 
 	return (
 		<MobileGate>
@@ -51,7 +49,6 @@ export default function Editor() {
 					</div>
 					<Onboarding />
 					<MigrationDialog />
-					<ChangelogNotification />
 				</div>
 			</EditorProvider>
 		</MobileGate>
