@@ -10,6 +10,7 @@ import type { SceneTracks } from "@/timeline";
 import type { MediaAsset } from "@/media/types";
 import { TICKS_PER_SECOND } from "@/wasm";
 import { renderThumbnailDataUrl } from "./thumbnail";
+import { checkVideoDecoderCapability } from "./webcodecs-capabilities";
 
 export type VideoFileData = {
 	duration: number;
@@ -40,12 +41,19 @@ export async function readVideoFile({
 			throw new Error("No video track found in the file");
 		}
 
-		const canDecode = await videoTrack.canDecode();
+		const decoderConfig = await videoTrack.getDecoderConfig();
+		const decoderCapability = await checkVideoDecoderCapability({
+			config: decoderConfig,
+		});
+		const canDecode = decoderCapability.supported;
 		const packetStats = await videoTrack.computePacketStats(100);
 		const audioTrack = await input.getPrimaryAudioTrack();
 
 		let thumbnailUrl: string | null = null;
 		if (canDecode) {
+			// Mediabunny 1.41 does not expose decoder options on VideoSampleSink.
+			// Exact WebCodecs capability probing above still prefers hardware when
+			// available, while the sink uses the browser/Mediabunny decoder policy.
 			const sink = new VideoSampleSink(videoTrack);
 			const frame = await sink.getSample(1);
 			if (frame) {

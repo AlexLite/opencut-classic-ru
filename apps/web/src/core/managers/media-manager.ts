@@ -6,6 +6,26 @@ import { generateUUID } from "@/utils/id";
 import { videoCache } from "@/services/video-cache/service";
 import { waveformCache } from "@/services/waveform-cache/service";
 import { BatchCommand, RemoveMediaAssetCommand } from "@/commands";
+import { createLocalVideoProxy } from "@/media/proxy/local-video-proxy";
+import { getCachedVideoProxy } from "@/media/proxy/proxy-cache";
+import {
+	classifyLocalProxyError,
+	type LocalProxyFailureCode,
+} from "@/media/proxy/proxy-errors";
+import { getMediaProxyMessages } from "@/i18n/media-proxy";
+
+function getProxyFailureMessage(code: LocalProxyFailureCode): string {
+	const messages = getMediaProxyMessages();
+	if (code === "ffmpeg-load-failed") return messages.loadFailed;
+	if (code === "input-too-large") return messages.inputTooLarge;
+	if (code === "out-of-memory") return messages.memoryFailed;
+	if (code === "worker-unavailable") return messages.workerUnavailable;
+	return messages.transcodeFailed;
+}
+
+function isProxyFailureRetryable(code: LocalProxyFailureCode): boolean {
+	return code !== "input-too-large";
+}
 
 export class MediaManager {
 	private assets: MediaAsset[] = [];
@@ -34,6 +54,9 @@ export class MediaManager {
 			this.editor.project.ratchetFpsForImportedMedia({
 				importedAssets: [newAsset],
 			});
+			if (newAsset.proxyFallbackFailure) {
+				this.showProxyRetryToast({ mediaId: newAsset.id });
+			}
 			return newAsset;
 		} catch (error) {
 			console.error("Failed to save media asset:", error);
@@ -47,6 +70,76 @@ export class MediaManager {
 			}
 
 			return null;
+		}
+	}
+
+	private showProxyRetryToast({ mediaId }: { mediaId: string }): void {
+		const asset = this.assets.find((item) => item.id === mediaId);
+		if (!asset?.proxyFallbackFailure) return;
+		const messages = getMediaProxyMessages();
+		const failureCode = asset.proxyFallbackFailure;
+		toast.error(messages.failedTitle, {
+			description: getProxyFailureMessage(failureCode),
+			...(isProxyFailureRetryable(failureCode)
+				? {
+						action: {
+							label: messages.retry,
+							onClick: () => void this.retryVideoProxy({ mediaId }),
+						},
+					}
+				: {}),
+		});
+	}
+
+	async retryVideoProxy({ mediaId }: { mediaId: string }): Promise<void> {
+		const asset = this.assets.find((item) => item.id === mediaId);
+		if (!asset || asset.type !== "video") return;
+
+		const messages = getMediaProxyMessages();
+		const toastId = toast.loading(messages.retrying, { description: "0%" });
+		try {
+			const proxy = await createLocalVideoProxy({
+				file: asset.file,
+				onProgress: (progress) => {
+					toast.loading(messages.retrying, {
+						id: toastId,
+						description: `${Math.round(progress * 100)}%`,
+					});
+				},
+			});
+			if (asset.previewUrl) URL.revokeObjectURL(asset.previewUrl);
+			const nextAsset: MediaAsset = {
+				...asset,
+				previewFile: proxy.file,
+				previewUrl: URL.createObjectURL(proxy.file),
+				proxyFallbackFailure: undefined,
+			};
+			this.assets = this.assets.map((item) =>
+				item.id === mediaId ? nextAsset : item,
+			);
+			videoCache.clearVideo({ mediaId });
+			this.notify();
+			toast.success(messages.ready, { id: toastId });
+		} catch (error) {
+			const normalized = classifyLocalProxyError(error);
+			this.assets = this.assets.map((item) =>
+				item.id === mediaId
+					? { ...item, proxyFallbackFailure: normalized.code }
+					: item,
+			);
+			this.notify();
+			toast.error(messages.failedTitle, {
+				id: toastId,
+				description: getProxyFailureMessage(normalized.code),
+				...(isProxyFailureRetryable(normalized.code)
+					? {
+							action: {
+								label: messages.retry,
+								onClick: () => void this.retryVideoProxy({ mediaId }),
+							},
+						}
+					: {}),
+			});
 		}
 	}
 
@@ -92,7 +185,18 @@ export class MediaManager {
 			const mediaAssets = await storageService.loadAllMediaAssets({
 				projectId,
 			});
-			this.assets = mediaAssets;
+			this.assets = await Promise.all(
+				mediaAssets.map(async (asset) => {
+					if (asset.type !== "video") return asset;
+					const cached = await getCachedVideoProxy({ file: asset.file });
+					if (!cached) return asset;
+					return {
+						...asset,
+						previewFile: cached.file,
+						previewUrl: URL.createObjectURL(cached.file),
+					};
+				}),
+			);
 			this.notify();
 		} catch (error) {
 			console.error("Failed to load media assets:", error);
@@ -108,6 +212,9 @@ export class MediaManager {
 		this.assets.forEach((asset) => {
 			if (asset.url) {
 				URL.revokeObjectURL(asset.url);
+			}
+			if (asset.previewUrl) {
+				URL.revokeObjectURL(asset.previewUrl);
 			}
 			if (asset.thumbnailUrl) {
 				URL.revokeObjectURL(asset.thumbnailUrl);
@@ -136,6 +243,9 @@ export class MediaManager {
 		this.assets.forEach((asset) => {
 			if (asset.url) {
 				URL.revokeObjectURL(asset.url);
+			}
+			if (asset.previewUrl) {
+				URL.revokeObjectURL(asset.previewUrl);
 			}
 			if (asset.thumbnailUrl) {
 				URL.revokeObjectURL(asset.thumbnailUrl);

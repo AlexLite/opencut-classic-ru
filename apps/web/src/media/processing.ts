@@ -1,25 +1,20 @@
 import { toast } from "sonner";
+import { getMediaProxyMessages } from "@/i18n/media-proxy";
 import { getMediaTypeFromFile } from "@/media/media-utils";
 import { formatStorageBytes } from "@/services/storage/quota";
 import { storageService } from "@/services/storage/service";
 import type { MediaAsset } from "@/media/types";
 import { readVideoFile } from "./mediabunny";
-import type { VideoFileData } from "./mediabunny";
 import { renderThumbnailDataUrl } from "./thumbnail";
+import { inspectVideoDecodeCapability } from "./video-capability-inspector";
+import { createLocalVideoProxy } from "./proxy/local-video-proxy";
+import { classifyLocalProxyError } from "./proxy/proxy-errors";
+import { inspectVideoCodec, type VideoCodecFamily } from "./codec-info";
+import { resolveImportDecodability } from "./import-decode-decision";
 
-export interface ProcessedMediaAsset extends Omit<MediaAsset, "id"> {}
+export type ProcessedMediaAsset = Omit<MediaAsset, "id">;
 
-const getUnsupportedVideoDescription = ({
-	codec,
-}: {
-	codec: VideoFileData["codec"];
-}): string => {
-	const codecLabel = codec ? codec.toUpperCase() : "this video codec";
-
-	return codec === "hevc"
-		? `${codecLabel} cannot be decoded in this browser, so this clip may not preview correctly. Convert it to H.264 MP4 or try importing it in Safari.`
-		: `${codecLabel} cannot be decoded in this browser, so this clip may not preview correctly. Convert it to H.264 MP4 and reimport it.`;
-};
+const LARGE_PROXY_FILE_BYTES = 750 * 1024 * 1024;
 
 const getStorageLimitDescription = ({
 	fileSize,
@@ -82,6 +77,25 @@ async function generateImageThumbnail({
 	});
 }
 
+function getProxyDescription({ family }: { family: VideoCodecFamily }): string {
+	const messages = getMediaProxyMessages();
+	if (family === "avc") return messages.avcUnsupported;
+	if (family === "hevc") return messages.hevcUnsupported;
+	return messages.genericUnsupported;
+}
+
+function shouldWarnAboutLocalTranscode({ file }: { file: File }): boolean {
+	if (file.size >= LARGE_PROXY_FILE_BYTES) return true;
+	if (typeof navigator === "undefined") return false;
+	const deviceMemory = (navigator as Navigator & { deviceMemory?: number })
+		.deviceMemory;
+	return (
+		(typeof deviceMemory === "number" && deviceMemory <= 4) ||
+		(typeof navigator.hardwareConcurrency === "number" &&
+			navigator.hardwareConcurrency <= 4)
+	);
+}
+
 export async function processMediaAssets({
 	files,
 	onProgress,
@@ -91,22 +105,30 @@ export async function processMediaAssets({
 }): Promise<ProcessedMediaAsset[]> {
 	const fileArray = Array.from(files);
 	const processedAssets: ProcessedMediaAsset[] = [];
-
 	const total = fileArray.length;
 	let completed = 0;
 
+	const reportCurrentFileProgress = (fraction: number) => {
+		if (!onProgress || total === 0) return;
+		const clamped = Math.max(0, Math.min(1, fraction));
+		onProgress({ progress: Math.round(((completed + clamped) / total) * 100) });
+	};
+	const markCurrentFileDone = () => {
+		completed += 1;
+		reportCurrentFileProgress(0);
+	};
+
 	for (const file of fileArray) {
+		const proxyMessages = getMediaProxyMessages();
 		const fileType = getMediaTypeFromFile({ file });
 
 		if (!fileType) {
 			toast.error(`Unsupported file type: ${file.name}`);
+			markCurrentFileDone();
 			continue;
 		}
 
-		const storageCheck = await storageService.canStoreFile({
-			size: file.size,
-		});
-
+		const storageCheck = await storageService.canStoreFile({ size: file.size });
 		if (!storageCheck.canStore) {
 			toast.error(`Not enough browser storage for ${file.name}`, {
 				description: getStorageLimitDescription({
@@ -114,16 +136,22 @@ export async function processMediaAssets({
 					availableBytes: storageCheck.availableBytes,
 				}),
 			});
+			markCurrentFileDone();
 			continue;
 		}
 
 		const url = URL.createObjectURL(file);
+		let previewFile: File | undefined;
+		let previewUrl: string | undefined;
 		let thumbnailUrl: string | undefined;
 		let duration: number | undefined;
 		let width: number | undefined;
 		let height: number | undefined;
 		let fps: number | undefined;
 		let hasAudio: boolean | undefined;
+		let nativeDecodable: boolean | undefined;
+		let sourceCodecInfo: MediaAsset["sourceCodecInfo"];
+		let proxyFallbackFailure: MediaAsset["proxyFallbackFailure"];
 
 		try {
 			if (fileType === "image") {
@@ -131,9 +159,18 @@ export async function processMediaAssets({
 				thumbnailUrl = result.thumbnailUrl;
 				width = result.width;
 				height = result.height;
+				reportCurrentFileProgress(1);
 			} else if (fileType === "video") {
-				try {
-					const videoData = await readVideoFile({ file });
+				const [videoResult, inspectionResult] = await Promise.allSettled([
+					readVideoFile({ file }),
+					inspectVideoDecodeCapability({ file }),
+				]);
+
+				let mediabunnyCanDecode: boolean | undefined;
+				let webCodecsSupported: boolean | undefined;
+
+				if (videoResult.status === "fulfilled") {
+					const videoData = videoResult.value;
 					duration = videoData.duration;
 					width = videoData.width;
 					height = videoData.height;
@@ -142,26 +179,68 @@ export async function processMediaAssets({
 						: undefined;
 					hasAudio = videoData.hasAudio;
 					thumbnailUrl = videoData.thumbnailUrl ?? undefined;
+					mediabunnyCanDecode = videoData.canDecode;
+					sourceCodecInfo = inspectVideoCodec({
+						codec: videoData.codec,
+						decoderConfig: null,
+					});
+				} else {
+					console.warn("Could not read video metadata with Mediabunny:", videoResult.reason);
+				}
 
-					if (!videoData.canDecode) {
-						toast.error(`Can't preview ${file.name}`, {
-							description: getUnsupportedVideoDescription({
-								codec: videoData.codec,
-							}),
+				if (inspectionResult.status === "fulfilled") {
+					webCodecsSupported = inspectionResult.value.capability.supported;
+					sourceCodecInfo = inspectionResult.value.codecInfo;
+				} else {
+					console.warn(
+						"Could not inspect exact WebCodecs decoder capability:",
+						inspectionResult.reason,
+					);
+				}
+
+				nativeDecodable = resolveImportDecodability({
+					mediabunnyCanDecode,
+					webCodecsSupported,
+				});
+
+				if (!nativeDecodable) {
+					const description = getProxyDescription({
+						family: sourceCodecInfo?.family ?? "unknown",
+					});
+					if (shouldWarnAboutLocalTranscode({ file })) {
+						toast.warning(proxyMessages.largeFileTitle, {
+							description: proxyMessages.largeFileDescription,
 						});
 					}
-				} catch (error) {
-					const message =
-						error instanceof Error
-							? error.message
-							: "Could not process video";
 
-					toast.error(`Couldn't process ${file.name}`, {
-						description: message,
+					const proxyToastId = toast.loading(proxyMessages.creatingTitle, {
+						description,
 					});
+					try {
+						const proxy = await createLocalVideoProxy({
+							file,
+							onProgress: (progress) => {
+								reportCurrentFileProgress(progress);
+								toast.loading(proxyMessages.creatingTitle, {
+									id: proxyToastId,
+									description: `${description} ${Math.round(progress * 100)}%`,
+								});
+							},
+						});
+						previewFile = proxy.file;
+						previewUrl = URL.createObjectURL(proxy.file);
+						const proxyData = await readVideoFile({ file: proxy.file });
+						thumbnailUrl = proxyData.thumbnailUrl ?? thumbnailUrl;
+						toast.success(proxyMessages.ready, { id: proxyToastId });
+					} catch (error) {
+						const normalized = classifyLocalProxyError(error);
+						proxyFallbackFailure = normalized.code;
+						toast.dismiss(proxyToastId);
+					}
 				}
 			} else if (fileType === "audio") {
 				duration = await getMediaDuration({ file });
+				reportCurrentFileProgress(1);
 			}
 
 			processedAssets.push({
@@ -169,25 +248,27 @@ export async function processMediaAssets({
 				type: fileType,
 				file,
 				url,
+				previewFile,
+				previewUrl,
 				thumbnailUrl,
 				duration,
 				width,
 				height,
 				fps,
 				hasAudio,
+				nativeDecodable,
+				sourceCodecInfo,
+				proxyFallbackFailure,
 			});
 
 			await new Promise((resolve) => setTimeout(resolve, 0));
-
-			completed += 1;
-			if (onProgress) {
-				const percent = Math.round((completed / total) * 100);
-				onProgress({ progress: percent });
-			}
+			markCurrentFileDone();
 		} catch (error) {
 			console.error("Error processing file:", file.name, error);
 			toast.error(`Failed to process ${file.name}`);
 			URL.revokeObjectURL(url);
+			if (previewUrl) URL.revokeObjectURL(previewUrl);
+			markCurrentFileDone();
 		}
 	}
 
@@ -196,9 +277,9 @@ export async function processMediaAssets({
 
 const getMediaDuration = ({ file }: { file: File }): Promise<number> => {
 	return new Promise((resolve, reject) => {
-		const element = document.createElement(
-			file.type.startsWith("video/") ? "video" : "audio",
-		) as HTMLVideoElement;
+		const element = file.type.startsWith("video/")
+			? document.createElement("video")
+			: document.createElement("audio");
 		const objectUrl = URL.createObjectURL(file);
 
 		element.addEventListener("loadedmetadata", () => {

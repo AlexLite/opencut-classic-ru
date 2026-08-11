@@ -30,6 +30,25 @@ function getVisibleSortedElements({ track }: { track: TimelineTrack }) {
 		});
 }
 
+function getRenderMediaSource({
+	mediaAsset,
+	isPreview,
+}: {
+	mediaAsset: MediaAsset;
+	isPreview?: boolean;
+}): { file: File; url: string } | null {
+	if (
+		isPreview &&
+		mediaAsset.type === "video" &&
+		mediaAsset.previewFile &&
+		mediaAsset.previewUrl
+	) {
+		return { file: mediaAsset.previewFile, url: mediaAsset.previewUrl };
+	}
+	if (!mediaAsset.file || !mediaAsset.url) return null;
+	return { file: mediaAsset.file, url: mediaAsset.url };
+}
+
 function buildTrackNodes({
 	tracks,
 	mediaMap,
@@ -61,16 +80,16 @@ function buildTrackNodes({
 
 			if (element.type === "video" || element.type === "image") {
 				const mediaAsset = mediaMap.get(element.mediaId);
-				if (!mediaAsset?.file || !mediaAsset?.url) {
-					continue;
-				}
+				if (!mediaAsset) continue;
+				const source = getRenderMediaSource({ mediaAsset, isPreview });
+				if (!source) continue;
 
 				if (element.type === "video" && mediaAsset.type === "video") {
 					nodes.push(
 						new VideoNode({
 							mediaId: mediaAsset.id,
-							url: mediaAsset.url,
-							file: mediaAsset.file,
+							url: source.url,
+							file: source.file,
 							duration: element.duration,
 							timeOffset: element.startTime,
 							trimStart: element.trimStart,
@@ -88,7 +107,7 @@ function buildTrackNodes({
 				if (element.type === "image" && mediaAsset.type === "image") {
 					nodes.push(
 						new ImageNode({
-							url: mediaAsset.url,
+							url: source.url,
 							duration: element.duration,
 							timeOffset: element.startTime,
 							trimStart: element.trimStart,
@@ -169,37 +188,33 @@ function buildBlurBackgroundNodes({
 	track,
 	mediaMap,
 	blurIntensity,
+	isPreview,
 }: {
 	track: TimelineTrack | undefined;
 	mediaMap: Map<string, MediaAsset>;
 	blurIntensity: number;
+	isPreview?: boolean;
 }): AnyBaseNode[] {
-	if (!track) {
-		return [];
-	}
+	if (!track) return [];
 
 	const nodes: AnyBaseNode[] = [];
 	const elements = getVisibleSortedElements({ track });
 
 	for (const element of elements) {
-		if (element.type !== "video" && element.type !== "image") {
-			continue;
-		}
+		if (element.type !== "video" && element.type !== "image") continue;
 
 		const mediaAsset = mediaMap.get(element.mediaId);
-		if (
-			!mediaAsset?.file ||
-			!mediaAsset?.url ||
-			(mediaAsset.type !== "video" && mediaAsset.type !== "image")
-		) {
+		if (!mediaAsset || (mediaAsset.type !== "video" && mediaAsset.type !== "image")) {
 			continue;
 		}
+		const source = getRenderMediaSource({ mediaAsset, isPreview });
+		if (!source) continue;
 
 		nodes.push(
 			new BlurBackgroundNode({
 				mediaId: mediaAsset.id,
-				url: mediaAsset.url,
-				file: mediaAsset.file,
+				url: source.url,
+				file: source.file,
 				mediaType: mediaAsset.type,
 				duration: element.duration,
 				timeOffset: element.startTime,
@@ -254,10 +269,9 @@ export function buildScene({
 			mediaMap,
 			blurIntensity:
 				background.blurIntensity ?? DEFAULT_BACKGROUND_BLUR_INTENSITY,
+			isPreview,
 		});
-		for (const node of blurNodes) {
-			rootNode.add(node);
-		}
+		for (const node of blurNodes) rootNode.add(node);
 	} else if (
 		background.type === "color" &&
 		background.color !== "transparent"
@@ -265,9 +279,6 @@ export function buildScene({
 		rootNode.add(new ColorNode({ color: background.color }));
 	}
 
-	for (const node of allNodes) {
-		rootNode.add(node);
-	}
-
+	for (const node of allNodes) rootNode.add(node);
 	return rootNode;
 }
