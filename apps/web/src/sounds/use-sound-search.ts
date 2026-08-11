@@ -2,6 +2,9 @@ import { useEffect } from "react";
 import { useSoundsStore } from "@/sounds/sounds-store";
 import { useI18n } from "@/i18n/use-i18n";
 
+const TOP_SOUNDS_PAGE_SIZE = 50;
+const SEARCH_PAGE_SIZE = 20;
+
 export function useSoundSearch({
 	query,
 	commercialOnly,
@@ -14,7 +17,6 @@ export function useSoundSearch({
 		searchResults,
 		isSearching,
 		searchError,
-		lastSearchQuery,
 		currentPage,
 		hasNextPage,
 		isLoadingMore,
@@ -27,6 +29,7 @@ export function useSoundSearch({
 		setHasNextPage,
 		setTotalCount,
 		setLoadingMore,
+		setHasLoaded,
 		appendSearchResults,
 		appendTopSounds,
 		resetPagination,
@@ -38,17 +41,23 @@ export function useSoundSearch({
 		try {
 			setLoadingMore({ loading: true });
 			const nextPage = currentPage + 1;
-
+			const isSearch = Boolean(query.trim());
 			const searchParams = new URLSearchParams({
 				page: nextPage.toString(),
+				page_size: (isSearch
+					? SEARCH_PAGE_SIZE
+					: TOP_SOUNDS_PAGE_SIZE
+				).toString(),
 				type: "effects",
+				commercial_only: commercialOnly.toString(),
 			});
 
-			if (query.trim()) {
+			if (isSearch) {
 				searchParams.set("q", query);
+			} else {
+				searchParams.set("sort", "downloads");
 			}
 
-			searchParams.set("commercial_only", commercialOnly.toString());
 			const response = await fetch(
 				`/api/sounds/search?${searchParams.toString()}`,
 			);
@@ -56,10 +65,10 @@ export function useSoundSearch({
 			if (response.ok) {
 				const data = await response.json();
 
-				if (query.trim()) {
-					appendSearchResults(data.results);
+				if (isSearch) {
+					appendSearchResults({ results: data.results });
 				} else {
-					appendTopSounds(data.results);
+					appendTopSounds({ results: data.results });
 				}
 
 				setCurrentPage({ page: nextPage });
@@ -82,10 +91,8 @@ export function useSoundSearch({
 			setSearchResults({ results: [] });
 			setSearchError({ error: null });
 			setLastSearchQuery({ query: "" });
-			return;
-		}
-
-		if (query === lastSearchQuery && searchResults.length > 0) {
+			resetPagination();
+			setHasLoaded({ loaded: false });
 			return;
 		}
 
@@ -97,15 +104,22 @@ export function useSoundSearch({
 				setSearchError({ error: null });
 				resetPagination();
 
+				const searchParams = new URLSearchParams({
+					q: query,
+					type: "effects",
+					page: "1",
+					page_size: SEARCH_PAGE_SIZE.toString(),
+					commercial_only: commercialOnly.toString(),
+				});
 				const response = await fetch(
-					`/api/sounds/search?q=${encodeURIComponent(query)}&type=effects&page=1`,
+					`/api/sounds/search?${searchParams.toString()}`,
 				);
 
 				if (!ignore) {
 					if (response.ok) {
 						const data = await response.json();
 						setSearchResults({ results: data.results });
-						setLastSearchQuery({ query: query });
+						setLastSearchQuery({ query });
 						setHasNextPage({ hasNext: !!data.next });
 						setTotalCount({ count: data.count });
 						setCurrentPage({ page: 1 });
@@ -132,8 +146,7 @@ export function useSoundSearch({
 		};
 	}, [
 		query,
-		lastSearchQuery,
-		searchResults.length,
+		commercialOnly,
 		setSearchResults,
 		setSearching,
 		setSearchError,
@@ -141,6 +154,7 @@ export function useSoundSearch({
 		setCurrentPage,
 		setHasNextPage,
 		setTotalCount,
+		setHasLoaded,
 		resetPagination,
 		editorT.sounds.loadFailed,
 	]);
