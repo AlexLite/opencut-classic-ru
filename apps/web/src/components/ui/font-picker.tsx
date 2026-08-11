@@ -1,13 +1,6 @@
 "use client";
 
-import {
-	useState,
-	useMemo,
-	useRef,
-	useEffect,
-	useCallback,
-	type CSSProperties,
-} from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { List, type RowComponentProps } from "react-window";
 import {
 	Popover,
@@ -26,8 +19,7 @@ import { ChevronDown, Search } from "lucide-react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { TextIcon } from "@hugeicons/core-free-icons";
 
-const FONT_TAB_KEYS = ["all", "my-fonts", "favorites"] as const;
-type FontTab = (typeof FONT_TAB_KEYS)[number];
+type FontTab = "all" | "my-fonts" | "favorites";
 
 const ROW_HEIGHT = 40;
 const PREVIEW_SCALE = 0.8;
@@ -85,17 +77,18 @@ export function FontPicker({
 		[onValueChange],
 	);
 
-	useEffect(() => {
-		if (!open) {
+	const handleOpenChange = (nextOpen: boolean) => {
+		setOpen(nextOpen);
+		if (!nextOpen) {
 			setSearch("");
 			setActiveTab("all");
 		}
-	}, [open]);
+	};
 
 	const activeTabLabel = tabs.find((tab) => tab.key === activeTab)?.label ?? "";
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover open={open} onOpenChange={handleOpenChange}>
 			<PopoverTrigger
 				className={cn(
 					"border-border bg-accent flex h-7 w-full cursor-pointer items-center justify-between gap-1 rounded-md border px-2.5 text-sm whitespace-nowrap focus-visible:border-primary focus-visible:ring-0 focus:outline-hidden",
@@ -239,7 +232,7 @@ function FontRow({
 	return (
 		<button
 			type="button"
-			style={style as CSSProperties}
+			style={style}
 			className={cn(
 				"flex w-full cursor-pointer items-center gap-2 px-3 outline-hidden hover:bg-popover-hover",
 				isSelected && "bg-popover-hover",
