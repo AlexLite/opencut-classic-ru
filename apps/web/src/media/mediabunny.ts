@@ -50,10 +50,11 @@ export async function readVideoFile({
 		const audioTrack = await input.getPrimaryAudioTrack();
 
 		let thumbnailUrl: string | null = null;
-		if (canDecode && decoderCapability.hardwareAcceleration) {
-			const sink = new VideoSampleSink(videoTrack, {
-				hardwareAcceleration: decoderCapability.hardwareAcceleration,
-			});
+		if (canDecode) {
+			// Mediabunny 1.41 does not expose decoder options on VideoSampleSink.
+			// Exact WebCodecs capability probing above still prefers hardware when
+			// available, while the sink uses the browser/Mediabunny decoder policy.
+			const sink = new VideoSampleSink(videoTrack);
 			const frame = await sink.getSample(1);
 			if (frame) {
 				try {
