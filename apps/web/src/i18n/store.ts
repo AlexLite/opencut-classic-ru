@@ -1,7 +1,11 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import {
+	createJSONStorage,
+	persist,
+	type StateStorage,
+} from "zustand/middleware";
 import type { Locale } from "./types";
 
 type LocaleState = {
@@ -9,15 +13,20 @@ type LocaleState = {
 	setLocale: (locale: Locale) => void;
 };
 
-export const useLocaleStore = create<LocaleState>()(
-	persist(
-		(set) => ({
-			locale: "ru",
-			setLocale: (locale) => set({ locale }),
-		}),
-		{
-			name: "opencut-locale",
-			version: 1,
-		},
-	),
-);
+export function createLocaleStore(storage?: StateStorage) {
+	return create<LocaleState>()(
+		persist(
+			(set) => ({
+				locale: "ru",
+				setLocale: (locale) => set({ locale }),
+			}),
+			{
+				name: "opencut-locale",
+				version: 1,
+				storage: createJSONStorage(() => storage ?? localStorage),
+			},
+		),
+	);
+}
+
+export const useLocaleStore = createLocaleStore();
