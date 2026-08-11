@@ -47,6 +47,7 @@ export default function RootLayout({
 				>
 					<TooltipProvider>
 						<Toaster />
+						<ChangelogNotification />
 						<Script
 							src="https://cdn.databuddy.cc/databuddy.js"
 							strategy="afterInteractive"
