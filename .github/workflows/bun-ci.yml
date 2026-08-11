@@ -84,25 +84,22 @@ jobs:
         run: bun test
 
   docker-build:
-    name: production Docker image
+    name: production Docker Compose image
     runs-on: ubuntu-latest
     needs: build
+    env:
+      BETTER_AUTH_SECRET: "ci-only-placeholder-secret-at-least-32-characters"
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3100"
+      NEXT_PUBLIC_MARBLE_API_URL: "https://placeholder.example.com"
+      MARBLE_WORKSPACE_KEY: "placeholder"
+      FREESOUND_CLIENT_ID: "placeholder"
+      FREESOUND_API_KEY: "placeholder"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build production image
-        run: |
-          docker build \
-            --file apps/web/Dockerfile \
-            --build-arg DATABASE_URL="postgresql://opencut:opencut@localhost:5432/opencut" \
-            --build-arg BETTER_AUTH_SECRET="ci-only-placeholder-secret-at-least-32-characters" \
-            --build-arg NEXT_PUBLIC_SITE_URL="http://localhost:3000" \
-            --build-arg NEXT_PUBLIC_MARBLE_API_URL="https://placeholder.example.com" \
-            --build-arg UPSTASH_REDIS_REST_URL="https://your-upstash-redis-url" \
-            --build-arg UPSTASH_REDIS_REST_TOKEN="your-upstash-redis-token" \
-            --build-arg MARBLE_WORKSPACE_KEY="placeholder" \
-            --build-arg FREESOUND_CLIENT_ID="placeholder" \
-            --build-arg FREESOUND_API_KEY="placeholder" \
-            --tag opencut-ci:latest \
-            .
+      - name: Validate Compose config
+        run: docker compose config --quiet
+
+      - name: Build production web image
+        run: docker compose build web
