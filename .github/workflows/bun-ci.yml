@@ -6,7 +6,7 @@ concurrency:
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/local-webcodecs-proxy-fallback]
     paths-ignore:
       - "*.md"
   pull_request:
@@ -70,6 +70,14 @@ jobs:
       - name: Install dependencies
         working-directory: apps/web
         run: bun install
+
+      - name: Lint
+        working-directory: apps/web
+        run: bun run lint
+
+      - name: Typecheck
+        working-directory: apps/web
+        run: bunx tsc --noEmit -p tsconfig.json
 
       - name: Build
         working-directory: apps/web
