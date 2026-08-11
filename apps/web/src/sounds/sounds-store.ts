@@ -228,6 +228,11 @@ export const useSoundsStore = create<SoundsStore>((set, get) => ({
 			const arrayBuffer = await response.arrayBuffer();
 			const audioContext = new AudioContext();
 			const buffer = await audioContext.decodeAudioData(arrayBuffer);
+			try {
+				await audioContext.close();
+			} catch (error) {
+				console.warn("Failed to close sound decoding audio context:", error);
+			}
 
 			const element = buildLibraryAudioElement({
 				sourceUrl: audioUrl,
