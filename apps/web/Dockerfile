@@ -6,6 +6,11 @@ COPY package.json bun.lock turbo.json ./
 COPY apps/web/package.json ./apps/web/
 RUN bun install --frozen-lockfile
 
+FROM deps AS migrator
+COPY . .
+WORKDIR /app/apps/web
+CMD ["bun", "run", "db:migrate"]
+
 FROM base AS builder
 WORKDIR /app
 
