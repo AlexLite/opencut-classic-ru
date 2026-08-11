@@ -7,6 +7,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { cn } from "@/utils/ui";
 import {
 	TAB_KEYS,
@@ -83,7 +84,7 @@ export function TabBar() {
 									)}
 									onClick={() => setActiveTab(tabKey)}
 								>
-									<tab.icon />
+									<HugeiconsIcon icon={tab.icon} />
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent
