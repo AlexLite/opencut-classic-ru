@@ -1,5 +1,8 @@
 name: Bun CI
 
+permissions:
+  contents: write
+
 concurrency:
   group: bun-ci-${{ github.ref }}
   cancel-in-progress: true
@@ -18,8 +21,10 @@ jobs:
   lockfile:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout localization branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Install Bun
         uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
@@ -29,10 +34,15 @@ jobs:
       - name: Generate lockfile
         run: bun install
 
-      - name: Upload generated lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-bun-lock
-          path: bun.lock
-          if-no-files-found: error
-          retention-days: 1
+      - name: Commit generated lockfile
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bun.lock
+          if git diff --cached --quiet; then
+            echo "bun.lock is already up to date"
+            exit 0
+          fi
+          git commit -m "chore: refresh Bun lockfile"
+          git push origin HEAD:${{ github.head_ref }}
