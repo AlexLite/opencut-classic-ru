@@ -10,7 +10,6 @@ import { LocalProxyError } from "@/media/proxy/proxy-errors";
 import { getMediaProxyMessages } from "@/i18n/media-proxy";
 import { videoCache } from "@/services/video-cache/service";
 import { formatTimecode } from "opencut-wasm";
-import { frameRateToFloat } from "@/fps/utils";
 import { downloadBlob } from "@/utils/browser";
 
 type SnapshotResult =
