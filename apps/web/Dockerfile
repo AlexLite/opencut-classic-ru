@@ -20,6 +20,7 @@ COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV TURBO_TELEMETRY_DISABLED=1
 
 ARG DATABASE_URL
 ARG BETTER_AUTH_SECRET
@@ -43,7 +44,8 @@ ENV MARBLE_WORKSPACE_KEY=${MARBLE_WORKSPACE_KEY}
 ENV FREESOUND_CLIENT_ID=${FREESOUND_CLIENT_ID}
 ENV FREESOUND_API_KEY=${FREESOUND_API_KEY}
 
-RUN bunx turbo run build --filter=web
+WORKDIR /app/apps/web
+RUN bun run build
 
 FROM base AS runner
 WORKDIR /app
