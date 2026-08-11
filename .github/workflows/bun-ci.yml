@@ -83,6 +83,41 @@ jobs:
         working-directory: apps/web
         run: bun test
 
+  database-schema:
+    name: database migration drift
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://opencut:opencut@localhost:5432/opencut"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
+        with:
+          bun-version: 1.2.18
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate migration candidate
+        working-directory: apps/web
+        run: bun run db:generate
+
+      - name: Check migration tree is unchanged
+        run: |
+          git status --short apps/web/migrations
+          test -z "$(git status --porcelain -- apps/web/migrations)"
+
+      - name: Upload generated migration candidate
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-migration-candidate
+          path: apps/web/migrations
+          if-no-files-found: error
+
   self-hosted-smoke:
     name: self-hosted Docker Compose smoke test
     runs-on: ubuntu-latest
