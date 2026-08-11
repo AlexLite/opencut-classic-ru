@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -9,28 +9,63 @@ import { useRouter } from "next/navigation";
 import { useI18n } from "@/i18n/use-i18n";
 
 const STORAGE_KEY = "mobile-acknowledged";
+const MOBILE_QUERY = "(max-width: 1023px)";
+const LOCAL_CHANGE_EVENT = "opencut-mobile-gate-change";
 
 interface MobileGateProps {
 	children: React.ReactNode;
 }
 
+function subscribe(onStoreChange: () => void) {
+	const mediaQuery = window.matchMedia(MOBILE_QUERY);
+	const handleStorage = (event: StorageEvent) => {
+		if (event.key === STORAGE_KEY) onStoreChange();
+	};
+
+	mediaQuery.addEventListener("change", onStoreChange);
+	window.addEventListener("storage", handleStorage);
+	window.addEventListener(LOCAL_CHANGE_EVENT, onStoreChange);
+
+	return () => {
+		mediaQuery.removeEventListener("change", onStoreChange);
+		window.removeEventListener("storage", handleStorage);
+		window.removeEventListener(LOCAL_CHANGE_EVENT, onStoreChange);
+	};
+}
+
+function getSnapshot() {
+	let acknowledged = false;
+	try {
+		acknowledged = localStorage.getItem(STORAGE_KEY) === "true";
+	} catch {
+		// localStorage unavailable
+	}
+	return window.matchMedia(MOBILE_QUERY).matches && !acknowledged;
+}
+
+function getServerSnapshot(): boolean | null {
+	return null;
+}
+
 export function MobileGate({ children }: MobileGateProps) {
 	const router = useRouter();
-	const [show, setShow] = useState<boolean | null>(null);
+	const show = useSyncExternalStore<boolean | null>(
+		subscribe,
+		getSnapshot,
+		getServerSnapshot,
+	);
 	const { t } = useI18n();
-
-	useEffect(() => {
-		const isMobile = window.innerWidth < 1024;
-		const acknowledged = localStorage.getItem(STORAGE_KEY) === "true";
-		setShow(isMobile && !acknowledged);
-	}, []);
 
 	if (show === null) return null;
 	if (!show) return <>{children}</>;
 
 	const handleContinue = () => {
-		localStorage.setItem(STORAGE_KEY, "true");
-		setShow(false);
+		try {
+			localStorage.setItem(STORAGE_KEY, "true");
+		} catch {
+			// Continue for this navigation even when localStorage is unavailable.
+		}
+		window.dispatchEvent(new Event(LOCAL_CHANGE_EVENT));
 	};
 
 	const handleGoBack = () => {
