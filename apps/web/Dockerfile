@@ -1,6 +1,6 @@
-FROM oven/bun:1.2.18-alpine AS base
+FROM oven/bun:1.2.18-alpine AS bun-base
 
-FROM base AS deps
+FROM bun-base AS deps
 WORKDIR /app
 COPY package.json bun.lock turbo.json ./
 COPY apps/web/package.json ./apps/web/
@@ -11,7 +11,7 @@ COPY . .
 WORKDIR /app/apps/web
 CMD ["bun", "run", "db:migrate"]
 
-FROM base AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -45,9 +45,9 @@ ENV FREESOUND_CLIENT_ID=${FREESOUND_CLIENT_ID}
 ENV FREESOUND_API_KEY=${FREESOUND_API_KEY}
 
 WORKDIR /app/apps/web
-RUN bun run build
+RUN node ./node_modules/next/dist/bin/next build
 
-FROM base AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -68,4 +68,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["bun", "apps/web/server.js"]
+CMD ["node", "apps/web/server.js"]
